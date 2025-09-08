@@ -1,109 +1,54 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  MessageSquare, 
-  Upload, 
-  GitMerge, 
-  Eye, 
-  Home,
-  Settings,
-  Image
-} from 'lucide-react';
+import { Settings, Radio, ClipboardList, Home } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Inicio', description: 'Dashboard principal' },
-    { path: '/templates', icon: MessageSquare, label: 'Plantillas', description: 'Gestionar plantillas de WhatsApp' },
-    { path: '/upload', icon: Upload, label: 'Cargar Excel', description: 'Subir archivo de datos' },
-    { path: '/mapping', icon: GitMerge, label: 'Mapear Campos', description: 'Configurar campos de plantilla' },
-    { path: '/preview', icon: Eye, label: 'Vista Previa', description: 'Revisar mensajes antes de enviar' },
+    { path: '/', icon: Home, label: 'Inicio', description: 'Página principal' },
+    { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL' },
+    { path: '/sensors', icon: Radio, label: 'Sensores', description: 'Gestionar sensores' },
+    { path: '/tasks', icon: ClipboardList, label: 'Tareas', description: 'Gestionar tareas' },
   ];
 
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div style={{
-        width: '280px',
-        backgroundColor: 'white',
-        borderRight: '1px solid #e5e7eb',
-        padding: '24px 0',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-      }}>
+      <aside className="w-72 bg-white border-r border-gray-200 py-6 shadow-sm flex flex-col">
         {/* Logo/Header */}
-        <div style={{ padding: '0 24px', marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#25d366',
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <MessageSquare size={28} />
-            WhatsApp Manager
+        <div className="px-6 mb-8">
+          <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
+            <Radio size={28} />
+            Zebra Sensor Manager
           </h1>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: '4px 0 0 36px'
-          }}>
-            Gestión de plantillas masivas
+          <p className="text-sm text-gray-500 ml-9">
+            Gestor de Sensores Zebra
           </p>
         </div>
 
         {/* Navigation */}
-        <nav>
+        <nav className="flex-grow">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            
+            const linkClasses = `
+              flex items-center py-3 px-6 text-gray-700 no-underline transition-all duration-200
+              border-r-4 ${active ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-transparent'}
+              hover:bg-gray-100
+            `;
+            const textClasses = `
+              font-medium text-sm ${active ? 'font-semibold' : ''}
+            `;
+
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '12px 24px',
-                  color: active ? '#25d366' : '#374151',
-                  backgroundColor: active ? '#f0fdf4' : 'transparent',
-                  borderRight: active ? '3px solid #25d366' : '3px solid transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    e.target.style.backgroundColor = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    e.target.style.backgroundColor = 'transparent';
-                  }
-                }}
-              >
-                <Icon size={20} style={{ marginRight: '12px' }} />
+              <Link key={item.path} to={item.path} className={linkClasses}>
+                <Icon size={20} className="mr-3" />
                 <div>
-                  <div style={{ 
-                    fontWeight: active ? '600' : '500',
-                    fontSize: '14px'
-                  }}>
-                    {item.label}
-                  </div>
-                  <div style={{ 
-                    fontSize: '12px', 
-                    color: '#6b7280',
-                    marginTop: '2px'
-                  }}>
-                    {item.description}
-                  </div>
+                  <div className={textClasses}>{item.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                 </div>
               </Link>
             );
@@ -111,27 +56,16 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* Footer */}
-        <div style={{
-          position: 'absolute',
-          bottom: '24px',
-          left: '24px',
-          right: '24px',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: '16px'
-        }}>
-          <div style={{ 
-            fontSize: '12px', 
-            color: '#6b7280',
-            textAlign: 'center'
-          }}>
-            v1.0.0 - WhatsApp Templates Manager
+        <div className="px-6 pt-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">
+            v1.0.0 - Zebra Sensor Manager
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <main style={{ padding: '32px' }}>
+      <div className="flex-1 overflow-auto">
+        <main className="p-8">
           {children}
         </main>
       </div>
