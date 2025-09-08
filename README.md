@@ -42,7 +42,7 @@ La aplicación se puede configurar de dos maneras:
 
 ### 1. Archivo `.env` (Configuración Inicial)
 
-Puedes proporcionar valores por defecto para la `baseUrl`, la `apikey` y el puerto de desarrollo creando un archivo `.env` en la raíz del proyecto.
+Puedes proporcionar valores por defecto para la `baseUrl`, la `apikey` y la configuración del servidor de desarrollo creando un archivo `.env` en la raíz del proyecto.
 
 1.  Crea una copia del archivo de ejemplo:
     ```bash
@@ -50,10 +50,13 @@ Puedes proporcionar valores por defecto para la `baseUrl`, la `apikey` y el puer
     ```
 2.  Edita el archivo `.env` con tus credenciales y configuración deseada:
     ```
-    # Puerto para el servidor de desarrollo (por defecto: 5173)
+    # --- Configuración del Servidor de Desarrollo ---
+    # Puerto para el servidor (por defecto: 5173)
     PORT=5173
+    # Host para el servidor. Usa '0.0.0.0' para exponer en la red local.
+    HOST=localhost
 
-    # Credenciales de la API
+    # --- Configuración de la API de Zebra ---
     VITE_API_BASE_URL=https://api.zebra.com/v2
     VITE_API_KEY=tu_api_key_aqui
     ```
