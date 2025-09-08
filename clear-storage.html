@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Storage - WhatsApp Templates Manager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #1da851;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Storage</h1>
+        <p>Esta página te ayudará a limpiar el localStorage para forzar la recarga de plantillas desde la API de WhatsApp.</p>
+        
+        <button onclick="clearStorage()">Limpiar LocalStorage</button>
+        <button onclick="checkStorage()">Verificar Storage</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearStorage() {
+            log('🧹 Iniciando limpieza de localStorage...');
+            
+            // Obtener todas las claves antes de limpiar
+            const keys = Object.keys(localStorage);
+            log(`📋 Encontradas ${keys.length} claves en localStorage`);
+            
+            // Limpiar específicamente el storage de la aplicación
+            if (localStorage.getItem('whatsapp-templates-storage')) {
+                localStorage.removeItem('whatsapp-templates-storage');
+                log('✅ Eliminado: whatsapp-templates-storage');
+            }
+            
+            // También limpiar cualquier otro storage relacionado
+            let cleaned = 0;
+            keys.forEach(key => {
+                if (key.includes('whatsapp') || key.includes('template')) {
+                    localStorage.removeItem(key);
+                    log(`✅ Eliminado: ${key}`);
+                    cleaned++;
+                }
+            });
+            
+            log(`🎉 Limpieza completada. ${cleaned} elementos eliminados.`);
+            log('🔄 Ahora puedes cerrar esta página y recargar la aplicación.');
+        }
+
+        function checkStorage() {
+            log('🔍 Verificando localStorage...');
+            
+            const keys = Object.keys(localStorage);
+            log(`📋 Total de claves: ${keys.length}`);
+            
+            if (keys.length === 0) {
+                log('✅ localStorage está vacío');
+                return;
+            }
+            
+            keys.forEach(key => {
+                if (key.includes('whatsapp') || key.includes('template')) {
+                    const value = localStorage.getItem(key);
+                    log(`🔍 ${key}: ${value ? value.substring(0, 100) + '...' : 'vacío'}`);
+                }
+            });
+            
+            if (!keys.some(key => key.includes('whatsapp') || key.includes('template'))) {
+                log('✅ No se encontraron datos relacionados con WhatsApp');
+            }
+        }
+
+        // Auto-verificar al cargar
+        window.onload = function() {
+            log('📱 Herramienta de limpieza de storage cargada');
+            checkStorage();
+        };
+    </script>
+</body>
+</html>
