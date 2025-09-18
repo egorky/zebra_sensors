@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Settings, Radio, ClipboardList, Home } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Settings, Radio, ClipboardList, Home, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Inicio', description: 'Página principal' },
@@ -54,6 +57,22 @@ const Layout = ({ children }) => {
             );
           })}
         </nav>
+
+        {/* Logout Button */}
+        {isAuthenticated && (
+          <div className="px-6 py-4">
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="flex items-center w-full py-3 px-4 text-left text-gray-700 rounded-lg hover:bg-gray-100 transition-all duration-200"
+            >
+              <LogOut size={20} className="mr-3" />
+              <span className="font-medium text-sm">Cerrar Sesión</span>
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="px-6 pt-4 border-t border-gray-200">
