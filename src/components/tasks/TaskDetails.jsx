@@ -22,8 +22,8 @@ const TaskDetails = ({ taskId }) => {
       setDetails(data.task);
 
       const sensorsData = await getSensors();
-      // Filter sensors that are not already in a task
-      const unassociatedSensors = sensorsData.sensors.filter(s => s.status === 'SENSOR_STATUS_STOPPED');
+      // Filter sensors that are not already in a task by checking if they have a recent task_id
+      const unassociatedSensors = sensorsData.sensors.filter(s => !s.most_recent || !s.most_recent.task_id);
       setAvailableSensors(unassociatedSensors);
 
     } catch (err) {
@@ -131,7 +131,7 @@ const TaskDetails = ({ taskId }) => {
       {taskData && (
         <div className="mt-6">
           <h3 className="text-xl font-bold mb-2">Datos de la Tarea</h3>
-          <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto">
+          <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto">
             {JSON.stringify(taskData, null, 2)}
           </pre>
         </div>

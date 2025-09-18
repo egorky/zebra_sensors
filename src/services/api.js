@@ -59,11 +59,24 @@ export const makeApiCall = async (endpoint, options = {}) => {
 
   if (!response.ok) {
     let errorData;
+    let errorText = response.statusText;
     try {
-      errorData = await response.json();
+      // Try to clone the response so we can read it as text and as json
+      const clonedResponse = response.clone();
+      errorText = await clonedResponse.text();
+      errorData = JSON.parse(errorText);
     } catch (e) {
-      errorData = { message: response.statusText };
+      // If parsing as JSON fails, we'll just use the text content
+      errorData = { message: errorText };
     }
+
+    console.error('API Call Failed:', {
+      url: url,
+      requestOptions: config,
+      responseStatus: response.status,
+      responseBody: errorText, // Log the raw text response
+    });
+
     throw new Error(`API call failed with status ${response.status}: ${errorData.message || 'Unknown error'}`);
   }
 
