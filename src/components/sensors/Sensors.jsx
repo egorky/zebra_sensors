@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getSensors, enrollSensor, unenrollSensor } from '../../services/api';
-import { PlusCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { PlusCircle, RefreshCw, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import SensorDetails from './SensorDetails';
 
 const Sensors = () => {
   const [sensors, setSensors] = useState([]);
@@ -8,6 +9,11 @@ const Sensors = () => {
   const [error, setError] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [selectedSensorId, setSelectedSensorId] = useState(null);
+
+  const handleRowClick = (sensorId) => {
+    setSelectedSensorId(prevId => (prevId === sensorId ? null : sensorId));
+  };
 
   const fetchSensors = useCallback(async () => {
     setLoading(true);
@@ -126,6 +132,7 @@ const Sensors = () => {
           <table className="min-w-full bg-white">
             <thead className="bg-gray-100">
               <tr>
+                <th className="py-2 px-4 border-b w-12"></th>
                 <th className="py-2 px-4 border-b text-left">Nombre</th>
                 <th className="py-2 px-4 border-b text-left">Serial Number</th>
                 <th className="py-2 px-4 border-b text-left">MAC Address</th>
@@ -137,28 +144,43 @@ const Sensors = () => {
             <tbody>
               {!loading && sensors.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-4 px-4 text-center text-gray-500">
+                  <td colSpan="7" className="py-4 px-4 text-center text-gray-500">
                     No se encontraron sensores.
                   </td>
                 </tr>
               ) : (
                 sensors.map((sensor) => (
-                  <tr key={sensor.id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b">{sensor.name}</td>
-                    <td className="py-2 px-4 border-b">{sensor.serial_number}</td>
-                    <td className="py-2 px-4 border-b">{sensor.mac_address}</td>
-                    <td className="py-2 px-4 border-b">{sensor.status}</td>
-                    <td className="py-2 px-4 border-b">{sensor.battery_level}%</td>
-                    <td className="py-2 px-4 border-b">
-                      <button
-                        onClick={() => handleUnenroll(sensor.serial_number)}
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm disabled:bg-red-300"
-                        disabled={loading}
-                      >
-                        Desenrolar
-                      </button>
-                    </td>
-                  </tr>
+                  <React.Fragment key={sensor.id}>
+                    <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => handleRowClick(sensor.id)}>
+                      <td className="py-2 px-4 border-b text-center">
+                        {selectedSensorId === sensor.id ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      </td>
+                      <td className="py-2 px-4 border-b">{sensor.name}</td>
+                      <td className="py-2 px-4 border-b">{sensor.serial_number}</td>
+                      <td className="py-2 px-4 border-b">{sensor.mac_address}</td>
+                      <td className="py-2 px-4 border-b">{sensor.status}</td>
+                      <td className="py-2 px-4 border-b">{sensor.battery_level}%</td>
+                      <td className="py-2 px-4 border-b">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent row click from firing
+                            handleUnenroll(sensor.serial_number);
+                          }}
+                          className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm disabled:bg-red-300"
+                          disabled={loading}
+                        >
+                          Desenrolar
+                        </button>
+                      </td>
+                    </tr>
+                    {selectedSensorId === sensor.id && (
+                      <tr>
+                        <td colSpan="7" className="p-4 bg-gray-50 border-b">
+                          <SensorDetails sensor={sensor} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
