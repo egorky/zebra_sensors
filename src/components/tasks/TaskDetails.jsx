@@ -22,9 +22,8 @@ const TaskDetails = ({ taskId }) => {
       setDetails(data.task);
 
       const sensorsData = await getSensors();
-      // Filter sensors that are not already in a task by checking if they have a recent task_id
-      const unassociatedSensors = sensorsData.sensors.filter(s => !s.most_recent || !s.most_recent.task_id);
-      setAvailableSensors(unassociatedSensors);
+      // Per user request, all sensors should be available for association.
+      setAvailableSensors(sensorsData.sensors);
 
     } catch (err) {
       setError(err.message);
