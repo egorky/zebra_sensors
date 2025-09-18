@@ -156,5 +156,5 @@ export const getTaskData = (taskId) => {
 };
 
 export const getTaskAlarms = (taskId) => {
-  return makeApiCall(`/environmental/tasks/${taskId}/alarms`);
+  return makeApiCall(`/environmental/tasks/${taskId}/alarms?page.size=100`);
 };
