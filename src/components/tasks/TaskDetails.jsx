@@ -2,6 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getTaskDetails, stopTask, getSensors, associateSensorToTask, getTaskData, getTaskAlarms } from '../../services/api';
 import { StopCircle, Plus, Download, AlertTriangle, BellRing } from 'lucide-react';
 
+const DetailItem = ({ label, value }) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  // Special handling for boolean values to display 'Sí' or 'No'
+  if (typeof value === 'boolean') {
+    value = value ? 'Sí' : 'No';
+  }
+  return (
+    <div>
+      <dt className="font-medium text-gray-600">{label}</dt>
+      <dd className="mt-1 text-sm text-gray-900">{String(value)}</dd>
+    </div>
+  );
+};
+
 const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -113,12 +129,64 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
         </div>
       )}
 
-      {/* --- Basic Details --- */}
-      <div className="grid grid-cols-2 gap-4">
-        <div><strong>ID de Tarea:</strong> {details.id}</div>
-        <div><strong>Estado:</strong> {details.status}</div>
-        <div><strong>Sensores Requeridos:</strong> {details.taskDetails.required_sensors}</div>
-        <div><strong>Sensores Asociados:</strong> {details.sensor_count}</div>
+      {/* --- Task Details --- */}
+      <div className="border-t border-gray-200 pt-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Detalles de la Tarea</h3>
+        <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+          <DetailItem label="ID de Tarea" value={details.id} />
+          <DetailItem label="Nombre" value={details.taskDetails.name} />
+          <DetailItem label="Estado General" value={details.status} />
+          <DetailItem label="Sensores Requeridos" value={details.taskDetails.required_sensors} />
+          <DetailItem label="Sensores Asociados" value={details.sensor_count} />
+          <DetailItem label="Total de Alarmas" value={details.alarm_count} />
+          <DetailItem label="Creada" value={new Date(details.taskDetails.created).toLocaleString()} />
+          <DetailItem label="Actualizada" value={new Date(details.taskDetails.updated).toLocaleString()} />
+          <DetailItem label="Iniciada" value={details.started ? new Date(details.started).toLocaleString() : 'N/A'} />
+          <DetailItem label="Finalizada" value={details.ended ? new Date(details.ended).toLocaleString() : 'N/A'} />
+          <DetailItem label="Tipo de Sensor" value={details.taskDetails.sensor_type} />
+          <DetailItem label="Notas" value={details.taskDetails.notes} />
+        </dl>
+
+        {/* Sensor Status Overview */}
+        {details.sensor_task_status_overview && (
+          <div className="mt-4">
+            <h4 className="font-semibold text-gray-700">Estado de Sensores en Tarea</h4>
+            <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 mt-2">
+              <DetailItem label="Activos" value={details.sensor_task_status_overview.active} />
+              <DetailItem label="Activos con Alarma" value={details.sensor_task_status_overview.active_with_alarm} />
+              <DetailItem label="Completados" value={details.sensor_task_status_overview.completed} />
+              <DetailItem label="Inicio Pendiente" value={details.sensor_task_status_overview.start_pending} />
+              <DetailItem label="Parada Pendiente" value={details.sensor_task_status_overview.stop_pending} />
+            </dl>
+          </div>
+        )}
+
+        {/* Alarm Configuration */}
+        <div className="mt-4">
+          <h4 className="font-semibold text-gray-700">Configuración de Alarmas</h4>
+          <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 mt-2">
+            <DetailItem label="Temp. Mínima" value={`${details.taskDetails.alarm_low_temp}°`} />
+            <DetailItem label="Temp. Máxima" value={`${details.taskDetails.alarm_high_temp}°`} />
+            <DetailItem label="Duración Alarma Baja" value={`${details.taskDetails.low_duration_minutes}m ${details.taskDetails.low_duration_seconds}s`} />
+            <DetailItem label="Duración Alarma Alta" value={`${details.taskDetails.high_duration_minutes}m ${details.taskDetails.high_duration_seconds}s`} />
+          </dl>
+        </div>
+
+        {/* Interval and Start Configuration */}
+        <div className="mt-4">
+          <h4 className="font-semibold text-gray-700">Configuración de Intervalo e Inicio</h4>
+           <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 mt-2">
+            <DetailItem label="Intervalo" value={`${details.taskDetails.interval_minutes}m ${details.taskDetails.interval_seconds}s`} />
+            <DetailItem label="Lecturas en Bucle" value={details.taskDetails.loop_reads} />
+            <DetailItem label="Inicio Inmediato" value={!!details.taskDetails.start_immediately} />
+             {details.taskDetails.start_delayed && (
+              <>
+                <DetailItem label="Inicio Retrasado" value="Sí" />
+                <DetailItem label="Retraso por Botón" value={details.taskDetails.start_delayed.on_button_press} />
+              </>
+            )}
+          </dl>
+        </div>
       </div>
 
       {/* --- Actions --- */}
