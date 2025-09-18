@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getTaskDetails, stopTask, getSensors, associateSensorToTask, getTaskData, getTaskAlarms } from '../../services/api';
 import { StopCircle, Plus, Download, AlertTriangle, BellRing } from 'lucide-react';
 
-const TaskDetails = ({ taskId }) => {
+const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -11,8 +11,8 @@ const TaskDetails = ({ taskId }) => {
   const [availableSensors, setAvailableSensors] = useState([]);
   const [selectedSensor, setSelectedSensor] = useState('');
 
-  const [taskData, setTaskData] = useState(null);
-  const [taskAlarms, setTaskAlarms] = useState(null);
+  const taskData = cachedData?.data;
+  const taskAlarms = cachedData?.alarms;
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);
@@ -52,10 +52,11 @@ const TaskDetails = ({ taskId }) => {
   };
 
   const handleExtractAlarms = async () => {
+    if (taskAlarms) return; // Don't re-fetch if already cached
     setLoading(true);
     try {
       const data = await getTaskAlarms(taskId);
-      setTaskAlarms(data);
+      onDetailUpdate(taskId, 'alarms', data);
       setActionMessage('Alarmas extraídas con éxito.');
     } catch (err) {
       setError(err.message);
@@ -81,10 +82,11 @@ const TaskDetails = ({ taskId }) => {
   };
 
   const handleExtractData = async () => {
+    if (taskData) return; // Don't re-fetch if already cached
     setLoading(true);
     try {
       const data = await getTaskData(taskId);
-      setTaskData(data);
+      onDetailUpdate(taskId, 'data', data);
       setActionMessage('Datos extraídos con éxito.');
     } catch (err) {
       setError(err.message);
