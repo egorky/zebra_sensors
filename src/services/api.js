@@ -154,3 +154,7 @@ export const addTaskAsset = (taskId, asset) => {
 export const getTaskData = (taskId) => {
   return makeApiCall(`/data/environmental/tasks/${taskId}/log?limit=500`);
 };
+
+export const getTaskAlarms = (taskId) => {
+  return makeApiCall(`/environmental/tasks/${taskId}/alarms`);
+};

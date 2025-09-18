@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTaskDetails, stopTask, getSensors, associateSensorToTask, getTaskData } from '../../services/api';
-import { StopCircle, Plus, Download, AlertTriangle } from 'lucide-react';
+import { getTaskDetails, stopTask, getSensors, associateSensorToTask, getTaskData, getTaskAlarms } from '../../services/api';
+import { StopCircle, Plus, Download, AlertTriangle, BellRing } from 'lucide-react';
 
 const TaskDetails = ({ taskId }) => {
   const [details, setDetails] = useState(null);
@@ -12,6 +12,7 @@ const TaskDetails = ({ taskId }) => {
   const [selectedSensor, setSelectedSensor] = useState('');
 
   const [taskData, setTaskData] = useState(null);
+  const [taskAlarms, setTaskAlarms] = useState(null);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);
@@ -43,6 +44,19 @@ const TaskDetails = ({ taskId }) => {
       await stopTask(taskId);
       setActionMessage('Tarea detenida con éxito.');
       fetchDetails();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExtractAlarms = async () => {
+    setLoading(true);
+    try {
+      const data = await getTaskAlarms(taskId);
+      setTaskAlarms(data);
+      setActionMessage('Alarmas extraídas con éxito.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -113,6 +127,9 @@ const TaskDetails = ({ taskId }) => {
         <button onClick={handleExtractData} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
           <Download size={20} /> Extraer Datos
         </button>
+        <button onClick={handleExtractAlarms} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
+          <BellRing size={20} /> Extraer Alarmas
+        </button>
       </div>
 
       {/* --- Associate Sensor --- */}
@@ -132,6 +149,16 @@ const TaskDetails = ({ taskId }) => {
           <h3 className="text-xl font-bold mb-2">Datos de la Tarea</h3>
           <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto">
             {JSON.stringify(taskData, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {/* --- Task Alarms --- */}
+      {taskAlarms && (
+        <div className="mt-6">
+          <h3 className="text-xl font-bold mb-2">Alarmas de la Tarea</h3>
+          <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto">
+            {JSON.stringify(taskAlarms, null, 2)}
           </pre>
         </div>
       )}
