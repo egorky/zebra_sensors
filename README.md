@@ -36,41 +36,41 @@ npm run server:install
 
 ```bash
 cp .env.example .env
-cp server/.env.example server/.env
 ```
 
-- **Raíz `.env`:** al menos `VITE_BACKEND_URL` (misma base que el API, p. ej. `http://localhost:3001`) y `VITE_API_*` si quieres valores por defecto de Zebra. Variables **`DEV_HOST` / `DEV_PORT`** ajustan el servidor de Vite en `npm run dev`; **`HOST` / `PORT`** ajustan el servidor estático al servir `dist/` (`npm start` / `npm run preview`). Opcional: **`ALLOWED_HOSTS`** (hosts permitidos, separados por coma).
-- **`server/.env`:** `JWT_SECRET` (≥16 caracteres), `CORS_ORIGIN` alineado con el origen del front, `PORT` del API (p. ej. 3001). Para el primer usuario: `BOOTSTRAP_ADMIN_*` (por defecto `admin` / `changeme`); ver [docs/backend_sqlite.md](docs/backend_sqlite.md).
+Edita **`.env` en la raíz** (único archivo de configuración). Incluye:
+
+- **API Node + SQLite:** `BACKEND_PORT` (no uses `PORT` para el API; `PORT` es el del front compilado), `JWT_SECRET`, `DATABASE_PATH`, `CORS_ORIGIN`, `BOOTSTRAP_ADMIN_*`. Debe coincidir **`VITE_BACKEND_URL`** con `http://localhost:<BACKEND_PORT>`.
+- **Vite (dev):** `DEV_HOST`, `DEV_PORT` — usados solo por `npm run dev`.
+- **Vite (estático):** `HOST`, `PORT` — usados al servir `dist/` en `npm start` (junto con el API; el mismo comando levanta ambos).
+- Opcional: `ALLOWED_HOSTS`.
+
+Detalle: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 
 ## Backend (SQLite)
 
-Resumen: **[docs/backend_sqlite.md](docs/backend_sqlite.md)**.
-
-- **Carpeta:** `server/`
-- **Puerto del API:** `PORT` en `server/.env` (por defecto 3001). **Debe coincidir** con el host/puerto de `VITE_BACKEND_URL`.
-- **Desarrollo API:** `npm run server:dev`
-- **Primer login:** usuario por defecto `admin` / `changeme` si la base está vacía; la UI **fuerza** a cambiar la contraseña antes de continuar.
+- Código en **`server/`**; dependencias nativas: `npm run server:install` una vez.
+- Toda la configuración del proceso Node está en el **`.env` de la raíz** (el servidor carga `../.env` respecto a `server/`).
+- **Primer login:** `admin` / `changeme` por defecto si la base está vacía; la UI exige cambiar la contraseña. Más: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 
 ## Scripts npm
 
 | Comando | Uso |
 |--------|-----|
-| `npm run dev` | Vite en modo desarrollo (hot reload). Puertos: `DEV_HOST`, `DEV_PORT` en `.env`. |
-| `npm run server:install` | Dependencias del directorio `server/`. |
-| `npm run server:dev` | API Node + SQLite con recarga. |
+| `npm run dev` | Arranca **a la vez** el front (Vite, `DEV_*`) y el **API Node** (SQLite, `BACKEND_PORT`). Un solo terminal. |
+| `npm run server:install` | Instala dependencias bajo `server/` (mejor-sqlite3, etc.). |
 | `npm run build` | Genera `dist/`. |
-| `npm start` | `npm run build` y luego sirve `dist/` con Vite preview. Host/puerto: `HOST`, `PORT` en `.env`. |
-| `npm run preview` | Solo sirve `dist/` (sin rebuild). |
+| `npm start` | Compila (`prestart`) y arranca **a la vez** `vite preview` (`HOST`/`PORT`) y el **API Node**. |
+| `npm run preview` | Solo sirve `dist/` con Vite, **sin** levantar el API (por si ya tienes el backend en otro sitio). |
+| `npm run seed` | Añade un usuario a SQLite; ver `package.json` / [docs/backend_sqlite.md](docs/backend_sqlite.md). |
 
 ### Producción y PM2
 
-Por defecto el servidor estático usa **`HOST=0.0.0.0`** y **`PORT=4173`** en `.env` si no defines otras. Ejemplo:
+`npm start` ya incluye front + API. Un solo proceso PM2:
 
 ```bash
 pm2 start npm --name zebra-sensor-manager -- start
 ```
-
-Arranca también el API Node en otro proceso PM2 apuntando a `npm run start --prefix server` o equivalente.
 
 ## Configuración de la API Zebra
 
@@ -81,9 +81,10 @@ Documentación: [docs/api_configuration.md](docs/api_configuration.md), [docs/us
 
 ## Uso rápido
 
-1. Arranca el API (`npm run server:dev`) y el front (`npm run dev`), con `.env` y `server/.env` configurados.
-2. Abre la URL del front; inicia sesión (primer usuario: ver backend_sqlite.md).
-3. **Sensores / Tareas** como de costumbre.
+1. Copia `.env.example` → `.`, edita `JWT_SECRET`, `VITE_BACKEND_URL`, etc.
+2. `npm install` y `npm run server:install`.
+3. **`npm run dev`** (desarrollo) o **`npm start`** (build + producción local): un solo comando para front y API.
+4. Abre la URL del front (`DEV_PORT` en dev, típicamente 5173; tras `npm start`, `PORT` del front estático, típicamente 4173). Inicia sesión (primer usuario: [backend_sqlite.md](docs/backend_sqlite.md)).
 
 ## Alineación con las APIs Zebra
 

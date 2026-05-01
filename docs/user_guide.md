@@ -11,7 +11,7 @@ Al abrir la aplicación verás la pantalla de login.
 
 ### Primer administrador
 
-Si la base de datos del servidor no tenía usuarios, el primer arranque crea un administrador según `BOOTSTRAP_ADMIN_*` en `server/.env` (por defecto **usuario `admin`**, **contraseña `changeme`**). Debes **cambiar esa contraseña** en la pantalla inicial antes de usar el resto de la aplicación. Detalle: [backend_sqlite.md](backend_sqlite.md).
+Si la base de datos del servidor no tenía usuarios, el primer arranque crea un administrador según `BOOTSTRAP_ADMIN_*` en el `.env` de la raíz (por defecto **usuario `admin`**, **contraseña `changeme`**). Debes **cambiar esa contraseña** en la pantalla inicial antes de usar el resto de la aplicación. Detalle: [backend_sqlite.md](backend_sqlite.md).
 
 ### Usuarios (administrador)
 
@@ -58,10 +58,9 @@ Más detalle en [api_configuration.md](api_configuration.md).
 
 ## 6. Ejecución
 
-- **API:** `npm run server:dev` desde la raíz (tras `npm run server:install`). Ver [README](../README.md) y [backend_sqlite.md](backend_sqlite.md).
-- **Front en desarrollo:** `npm run dev` — variables `DEV_HOST` / `DEV_PORT` en el `.env` de la raíz.
-- **Servir la SPA compilada:** `npm run build` y `npm start` o `npm run preview` — variables `HOST` / `PORT` (y opcional `ALLOWED_HOSTS`) en el mismo `.env`.
-- Producción / **PM2:** véase el [README](../README.md).
+- **`npm run dev`** — un solo comando: front (Vite) y API Node + SQLite. Variables `DEV_*` y `BACKEND_PORT` / `VITE_BACKEND_URL` en el `.env` de la raíz.
+- **`npm start`** — build y luego front estático + API en paralelo. Ver [README](../README.md) y [backend_sqlite.md](backend_sqlite.md).
+- **`npm run preview`** — solo sirve `dist/` sin levantar el API (caso especial).
 
 ## 7. Documentación Zebra
 

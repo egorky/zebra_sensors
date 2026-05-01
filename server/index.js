@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './loadRootEnv.js';
 import express from 'express';
 import cors from 'cors';
 import { openDatabase, ensureBootstrapUser } from './db.js';
@@ -9,13 +9,17 @@ import { createSensorsRouter } from './routes/sensors.js';
 import { createTasksRouter } from './routes/tasks.js';
 import { changePasswordHandler } from './routes/changePassword.js';
 
-const PORT = Number(process.env.PORT) || 3001;
+// PORT en el .env raíz lo usa Vite para servir dist/; el API usa BACKEND_PORT.
+const PORT = Number(process.env.BACKEND_PORT) || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
-const DATABASE_PATH = process.env.DATABASE_PATH || './data/app.db';
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const DATABASE_PATH = process.env.DATABASE_PATH || './server/data/app.db';
+const CORS_ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:4173')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 if (!JWT_SECRET || JWT_SECRET.length < 16) {
-  console.error('Falta JWT_SECRET en .env (mínimo 16 caracteres).');
+  console.error('Falta JWT_SECRET en el .env de la raíz (mínimo 16 caracteres).');
   process.exit(1);
 }
 
@@ -24,7 +28,7 @@ ensureBootstrapUser(db);
 
 const requireAuth = createAuthMiddleware(JWT_SECRET);
 const app = express();
-app.use(cors({ origin: CORS_ORIGIN, credentials: false }));
+app.use(cors({ origin: CORS_ORIGINS.length ? CORS_ORIGINS : true, credentials: false }));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
@@ -61,5 +65,5 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`API SQLite en http://localhost:${PORT} (CORS: ${CORS_ORIGIN})`);
+  console.log(`[api] SQLite http://localhost:${PORT} (CORS: ${CORS_ORIGINS.join(', ')})`);
 });

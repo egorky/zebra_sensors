@@ -1,47 +1,54 @@
 # Backend SQLite (API Node)
 
-Variables en **`server/.env`** (plantilla: `server/.env.example`).
+Toda la configuración del API está en el archivo **`.env` en la raíz del repositorio** (no uses `server/.env`). El proceso carga ese archivo mediante `server/loadRootEnv.js`.
 
 ## Puerto del backend
 
-| Variable | Descripción |
-|----------|-------------|
-| `PORT` | Puerto HTTP del API Express (por defecto **3001** en código). |
+| Variable (raíz `.env`) | Descripción |
+|----------------------|-------------|
+| **`BACKEND_PORT`** | Puerto HTTP del API Express (por defecto **3001** en código). |
 
-El front debe declarar la misma base en **`VITE_BACKEND_URL`** del `.env` de la raíz del repo, por ejemplo:
+**No uses la variable `PORT` del `.env` para el API:** en este proyecto `PORT` está reservada para el servidor **Vite** que sirve la SPA compilada (`npm start` / `npm run preview`).
+
+El cliente debe declarar la misma base en **`VITE_BACKEND_URL`**, por ejemplo:
 
 ```dotenv
+BACKEND_PORT=3001
 VITE_BACKEND_URL=http://localhost:3001
 ```
 
-Si cambias `PORT` en el servidor, actualiza también `VITE_BACKEND_URL` y recompila el front (`npm run build` o `npm run dev`).
+## Otros valores del API (mismo `.env` raíz)
 
-## Primer usuario y cambio obligatorio de contraseña
+| Variable | Descripción |
+|----------|-------------|
+| `JWT_SECRET` | Firma de JWT (mínimo 16 caracteres). |
+| `DATABASE_PATH` | Ruta al SQLite (por defecto `./server/data/app.db` relativo a la raíz del repo). |
+| `CORS_ORIGIN` | Uno o varios orígenes separados por coma. Por defecto el código asume `http://localhost:5173` y `http://localhost:4173` (dev y preview del front). |
+| `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` | Primer administrador si la base está vacía (por defecto `admin` / `changeme`). Debe cambiar la contraseña al primer login. |
 
-Si la tabla de usuarios está **vacía** al arrancar el servidor, se inserta un administrador según:
+## Arranque conjunto con el front
 
-| Variable | Si no existe |
-|----------|----------------|
-| `BOOTSTRAP_ADMIN_USERNAME` | `admin` |
-| `BOOTSTRAP_ADMIN_PASSWORD` | `changeme` |
+No hace falta un comando aparte para el backend:
 
-Ese usuario queda con **`must_change_password = 1`**: la SPA solo muestra la pantalla **Cambiar contraseña** hasta completar un cambio (nueva clave mínimo 8 caracteres). Luego se emite un JWT nuevo y el uso es normal.
+- **`npm run dev`** — levanta Vite (hot reload) y el API en paralelo (`concurrently`).
+- **`npm start`** — ejecuta el build y luego Vite preview + API en paralelo.
 
-**Producción:** define `BOOTSTRAP_ADMIN_PASSWORD` robusto **antes** del primer arranque, rota `JWT_SECRET`, y ajusta `CORS_ORIGIN` al origen real del front.
+Variables que usa solo el front en Vite:
 
-## Otras variables del servidor
+- **`DEV_HOST` / `DEV_PORT`** — servidor de desarrollo (`npm run dev`).
+- **`HOST` / `PORT`** — servidor que sirve `dist/` cuando ejecutas el preview integrado en `npm start`.
+- **`ALLOWED_HOSTS`** — opcional, para el preview de Vite.
 
-- **`JWT_SECRET`** — firma de JWT (mínimo 16 caracteres en validación del proceso).
-- **`DATABASE_PATH`** — ruta al fichero SQLite (por defecto `server/data/app.db`).
-- **`CORS_ORIGIN`** — origen del navegador permitido (esquema + host + puerto), p. ej. `http://localhost:5173` en desarrollo.
+## CLI seed
 
-## Variables del `.env` en la raíz (solo front / Vite)
+Desde la raíz del repo:
 
-| Variable | Uso |
-|----------|-----|
-| **`VITE_BACKEND_URL`** | Obligatoria: URL base del API Node para login y rutas `/api/*`. |
-| **`DEV_HOST`**, **`DEV_PORT`** | Servidor de desarrollo Vite (`npm run dev`). Por defecto `localhost` y `5173`. |
-| **`HOST`**, **`PORT`** | Servidor que sirve la carpeta **`dist/`** con `vite preview` (`npm start`, `npm run preview`). Por defecto `0.0.0.0` y `4173`. |
-| **`ALLOWED_HOSTS`** | Opcional: lista separada por comas para la opción `allowedHosts` del preview de Vite. |
+```bash
+npm run seed -- nuevo_usuario su_clave admin
+```
 
-El API Node usa **su propio** `PORT` en `server/.env`; no confundir con el `PORT` del `.env` raíz, que controla el puerto del **servidor estático** del front compilado.
+Usa el mismo `.env` y `DATABASE_PATH`.
+
+## Referencia de APIs Zebra
+
+La configuración de Zebra Data Services en el navegador sigue siendo independiente; véase [api_configuration.md](api_configuration.md).

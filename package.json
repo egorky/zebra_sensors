@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"node server/index.js\"",
     "server:install": "npm install --prefix server",
-    "server:dev": "npm run dev --prefix server",
     "build": "vite build",
     "prestart": "npm run build",
-    "start": "vite preview",
+    "start": "concurrently -n web,api -c cyan,magenta \"vite preview\" \"node server/index.js\"",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed": "node server/scripts/seed.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -32,6 +32,7 @@
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.1.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",

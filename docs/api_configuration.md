@@ -39,7 +39,7 @@ Variables relacionadas con **Vite**:
 
 **Nota:** Las variables `VITE_*` se inyectan en el cliente en tiempo de compilación. Si cambias `.env`, vuelve a ejecutar `npm run dev` o `npm run build` según el modo.
 
-Variables del **servidor API** (`server/.env`): `PORT`, `JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
+Variables del **servidor API** en el **`.env` de la raíz**: `BACKEND_PORT`, `JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
 
 ## Referencia de APIs Zebra
 

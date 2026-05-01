@@ -133,10 +133,10 @@ const Help = () => {
 
         <Section id="acceso-usuarios" title="Acceso, nuevos usuarios y roles">
           <p>
-            El login valida usuario y contraseña contra la <strong>base SQLite</strong> del API Node y devuelve un <strong>JWT</strong>. En el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> del front debe figurar <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> apuntando a ese servidor (mismo host/puerto que <code className="bg-gray-100 px-1 rounded text-sm">PORT</code> en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code>). Los administradores gestionan cuentas en el menú <strong>Usuarios</strong>.
+            El login valida usuario y contraseña contra la <strong>base SQLite</strong> del API Node y devuelve un <strong>JWT</strong>. En el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> de la raíz debe figurar <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> apuntando a ese servidor (mismo host/puerto que <code className="bg-gray-100 px-1 rounded text-sm">BACKEND_PORT</code>). Los administradores gestionan cuentas en el menú <strong>Usuarios</strong>.
           </p>
           <p>
-            El primer arranque del servidor crea un administrador con <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_PASSWORD</code> en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> si la tabla de usuarios está vacía (por defecto <code className="bg-gray-100 px-1 rounded text-sm">admin</code> / <code className="bg-gray-100 px-1 rounded text-sm">changeme</code>). Ese primer acceso <strong>debe cambiar la contraseña</strong> antes de usar el resto de la aplicación.
+            El primer arranque del servidor crea un administrador con <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_PASSWORD</code> en el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> de la raíz si la tabla de usuarios está vacía (por defecto <code className="bg-gray-100 px-1 rounded text-sm">admin</code> / <code className="bg-gray-100 px-1 rounded text-sm">changeme</code>). Ese primer acceso <strong>debe cambiar la contraseña</strong> antes de usar el resto de la aplicación.
           </p>
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="min-w-full text-sm text-left">
@@ -338,16 +338,16 @@ const Help = () => {
         <Section id="ejecucion" title="Desarrollo y despliegue">
           <ul className="list-disc list-inside space-y-2">
             <li>
-              <strong>API Node + SQLite</strong>: desde la raíz, <code className="bg-gray-100 px-1 rounded text-sm">npm run server:install</code> una vez y <code className="bg-gray-100 px-1 rounded text-sm">npm run server:dev</code> para el backend. Configuración en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> (puerto <code className="bg-gray-100 px-1 rounded text-sm">PORT</code>, típicamente 3001).
+              Un único archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> en la raíz del proyecto configura el front y el API Node + SQLite (puerto del API: <code className="bg-gray-100 px-1 rounded text-sm">BACKEND_PORT</code>, no confundir con <code className="bg-gray-100 px-1 rounded text-sm">PORT</code>, que usa Vite para servir la web compilada).
             </li>
             <li>
-              <strong>Front en desarrollo</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code>. Host y puerto del servidor Vite: <code className="bg-gray-100 px-1 rounded text-sm">DEV_HOST</code> y <code className="bg-gray-100 px-1 rounded text-sm">DEV_PORT</code> en el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> de la raíz.
+              <strong>Desarrollo</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> arranca a la vez el servidor Vite (<code className="bg-gray-100 px-1 rounded text-sm">DEV_HOST</code>, <code className="bg-gray-100 px-1 rounded text-sm">DEV_PORT</code>) y el backend. Instala dependencias del API una vez con <code className="bg-gray-100 px-1 rounded text-sm">npm run server:install</code>.
             </li>
             <li>
-              <strong>Servir la SPA compilada</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run build</code> genera <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>; <code className="bg-gray-100 px-1 rounded text-sm">npm start</code> compila y ejecuta el servidor estático de Vite. Host y puerto: <code className="bg-gray-100 px-1 rounded text-sm">HOST</code> y <code className="bg-gray-100 px-1 rounded text-sm">PORT</code> en el mismo <code className="bg-gray-100 px-1 rounded text-sm">.env</code>. Opcional: <code className="bg-gray-100 px-1 rounded text-sm">ALLOWED_HOSTS</code>.
+              <strong>Producción local</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm start</code> compila y levanta el front estático (<code className="bg-gray-100 px-1 rounded text-sm">HOST</code>, <code className="bg-gray-100 px-1 rounded text-sm">PORT</code>) y el API en el mismo comando.
             </li>
             <li>
-              En servidor puedes usar PM2 u otro supervisor sobre el proceso del front y/o el del API Node.
+              En servidor puedes usar PM2 con un solo proceso sobre <code className="bg-gray-100 px-1 rounded text-sm">npm start</code>.
             </li>
           </ul>
         </Section>
