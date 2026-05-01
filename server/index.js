@@ -1,6 +1,7 @@
 import './loadRootEnv.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
-import cors from 'cors';
 import { openDatabase, ensureBootstrapUser } from './db.js';
 import { createAuthMiddleware, requireAdmin } from './middleware/auth.js';
 import { createAuthRouter } from './routes/auth.js';
@@ -9,14 +10,15 @@ import { createSensorsRouter } from './routes/sensors.js';
 import { createTasksRouter } from './routes/tasks.js';
 import { changePasswordHandler } from './routes/changePassword.js';
 
-// PORT en el .env raíz lo usa Vite para servir dist/; el API usa BACKEND_PORT.
-const PORT = Number(process.env.BACKEND_PORT) || 3001;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '..');
+const isProd = process.env.NODE_ENV === 'production';
+const PORT =
+  Number(process.env.PORT || process.env.BACKEND_PORT) || (isProd ? 4173 : 5173);
+const HOST = process.env.HOST ?? '0.0.0.0';
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const DATABASE_PATH = process.env.DATABASE_PATH || './server/data/app.db';
-const CORS_ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:4173')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
 
 if (!JWT_SECRET || JWT_SECRET.length < 16) {
   console.error('Falta JWT_SECRET en el .env de la raíz (mínimo 16 caracteres).');
@@ -28,7 +30,6 @@ ensureBootstrapUser(db);
 
 const requireAuth = createAuthMiddleware(JWT_SECRET);
 const app = express();
-app.use(cors({ origin: CORS_ORIGINS.length ? CORS_ORIGINS : true, credentials: false }));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
@@ -59,11 +60,37 @@ app.use('/api/sensors', requireAuth, sensorsRouter);
 const tasksRouter = createTasksRouter(db);
 app.use('/api/tasks', requireAuth, tasksRouter);
 
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'No encontrado' });
+});
+
+async function attachFrontend() {
+  if (!isProd) {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      root: repoRoot,
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const dist = path.join(repoRoot, 'dist');
+    app.use(express.static(dist));
+    app.get('*', (req, res, next) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+      res.sendFile(path.join(dist, 'index.html'), (err) => (err ? next(err) : undefined));
+    });
+  }
+}
+
+await attachFrontend();
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Error interno' });
 });
 
-app.listen(PORT, () => {
-  console.log(`[api] SQLite http://localhost:${PORT} (CORS: ${CORS_ORIGINS.join(', ')})`);
+app.listen(PORT, HOST, () => {
+  const mode = isProd ? 'producción (dist/)' : 'desarrollo (Vite)';
+  console.log(`[app] http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT} — ${mode}`);
 });

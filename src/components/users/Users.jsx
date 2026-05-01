@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users as UsersIcon, Trash2, UserPlus, AlertTriangle } from 'lucide-react';
-import { hasBackendUrl, fetchBackendUsers, createBackendUser, deleteBackendUser } from '../../services/backendApi';
+import { fetchBackendUsers, createBackendUser, deleteBackendUser } from '../../services/backendApi';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -13,11 +13,6 @@ const Users = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
-    if (!hasBackendUrl()) {
-      setError('Define VITE_BACKEND_URL en el .env del front y arranca el servidor API.');
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError('');
     try {

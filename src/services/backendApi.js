@@ -1,12 +1,10 @@
+/** Base del API: vacío = mismo origen (Express sirve front + `/api` en un solo puerto). */
 const trimBase = () => import.meta.env.VITE_BACKEND_URL?.trim()?.replace(/\/$/, '') || '';
 
-/** La URL del API Node es obligatoria para esta aplicación. */
-export function hasBackendUrl() {
-  return Boolean(trimBase());
-}
-
-export function getBackendBaseUrl() {
-  return trimBase();
+function joinApi(path) {
+  const b = trimBase();
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return b ? `${b}${p}` : p;
 }
 
 export function readBackendAuthFromStorage() {
@@ -23,15 +21,11 @@ export function readBackendAuthFromStorage() {
 }
 
 export async function authChangePassword(currentPassword, newPassword) {
-  const base = trimBase();
-  if (!base) {
-    throw new Error('Falta VITE_BACKEND_URL');
-  }
   const auth = readBackendAuthFromStorage();
   if (!auth?.token) {
     throw new Error('Sesión no válida');
   }
-  const r = await fetch(`${base}/api/auth/change-password`, {
+  const r = await fetch(joinApi('/api/auth/change-password'), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${auth.token}`,
@@ -47,11 +41,7 @@ export async function authChangePassword(currentPassword, newPassword) {
 }
 
 export async function backendLogin(username, password) {
-  const base = trimBase();
-  if (!base) {
-    throw new Error('Falta VITE_BACKEND_URL');
-  }
-  const r = await fetch(`${base}/api/auth/login`, {
+  const r = await fetch(joinApi('/api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -64,10 +54,6 @@ export async function backendLogin(username, password) {
 }
 
 async function backendFetch(path, options = {}) {
-  const base = trimBase();
-  if (!base) {
-    throw new Error('Falta VITE_BACKEND_URL');
-  }
   const auth = readBackendAuthFromStorage();
   if (!auth?.token) {
     throw new Error('Sesión no válida');
@@ -79,7 +65,7 @@ async function backendFetch(path, options = {}) {
   if (options.body && typeof options.body === 'string') {
     headers['Content-Type'] = 'application/json';
   }
-  const r = await fetch(`${base}${path}`, { ...options, headers });
+  const r = await fetch(joinApi(path), { ...options, headers });
   const text = await r.text();
   let json;
   try {

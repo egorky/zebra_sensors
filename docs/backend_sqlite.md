@@ -1,43 +1,34 @@
 # Backend SQLite (API Node)
 
-Toda la configuración del API está en el archivo **`.env` en la raíz del repositorio** (no uses `server/.env`). El proceso carga ese archivo mediante `server/loadRootEnv.js`.
+Toda la configuración está en el **`.env` en la raíz del repositorio**. El proceso carga ese archivo mediante `server/loadRootEnv.js`.
 
-## Puerto del backend
+El API se expone en el **mismo servidor HTTP** que la SPA, bajo el prefijo **`/api`**. No hace falta un segundo puerto ni CORS para el uso normal (mismo origen).
 
-| Variable (raíz `.env`) | Descripción |
-|----------------------|-------------|
-| **`BACKEND_PORT`** | Puerto HTTP del API Express (por defecto **3001** en código). |
+## Puerto y host
 
-**No uses la variable `PORT` del `.env` para el API:** en este proyecto `PORT` está reservada para el servidor **Vite** que sirve la SPA compilada (`npm start` / `npm run preview`).
+Un solo proceso escucha en **`HOST`** y **`PORT`** (variables del `.env` raíz). El mismo valor usa el navegador para la web y para las peticiones a `/api/...` si no defines `VITE_BACKEND_URL`.
 
-El cliente debe declarar la misma base en **`VITE_BACKEND_URL`**, por ejemplo:
+| Variable | Descripción |
+|----------|-------------|
+| `PORT` | Puerto HTTP (por defecto **5173** en desarrollo, **4173** en producción si no está definido). |
+| `HOST` | Interfaz de escucha (por defecto **`0.0.0.0`**). |
 
-```dotenv
-BACKEND_PORT=3001
-VITE_BACKEND_URL=http://localhost:3001
-```
+Con **`npm run dev`**, `NODE_ENV` no es `production` y Vite corre en modo middleware dentro de Express.
 
-## Otros valores del API (mismo `.env` raíz)
+Con **`npm start`**, `NODE_ENV=production` y Express sirve los estáticos de `dist/` además del API.
+
+## Variables del API (mismo `.env`)
 
 | Variable | Descripción |
 |----------|-------------|
 | `JWT_SECRET` | Firma de JWT (mínimo 16 caracteres). |
 | `DATABASE_PATH` | Ruta al SQLite (por defecto `./server/data/app.db` relativo a la raíz del repo). |
-| `CORS_ORIGIN` | Uno o varios orígenes separados por coma. Por defecto el código asume `http://localhost:5173` y `http://localhost:4173` (dev y preview del front). |
-| `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` | Primer administrador si la base está vacía (por defecto `admin` / `changeme`). Debe cambiar la contraseña al primer login. |
+| `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` | Primer administrador si la base está vacía (por defecto `admin` / `changeme`). Hay que cambiar la contraseña al primer login. |
 
-## Arranque conjunto con el front
+## Cliente: `VITE_BACKEND_URL`
 
-No hace falta un comando aparte para el backend:
-
-- **`npm run dev`** — levanta Vite (hot reload) y el API en paralelo (`concurrently`).
-- **`npm start`** — ejecuta el build y luego Vite preview + API en paralelo.
-
-Variables que usa solo el front en Vite:
-
-- **`DEV_HOST` / `DEV_PORT`** — servidor de desarrollo (`npm run dev`).
-- **`HOST` / `PORT`** — servidor que sirve `dist/` cuando ejecutas el preview integrado en `npm start`.
-- **`ALLOWED_HOSTS`** — opcional, para el preview de Vite.
+- **Vacío o sin definir:** el front llama a rutas relativas (`/api/...`) en el mismo host y puerto (recomendado).
+- **URL absoluta:** solo si despliegas el front en otro dominio que el API.
 
 ## CLI seed
 
@@ -51,4 +42,4 @@ Usa el mismo `.env` y `DATABASE_PATH`.
 
 ## Referencia de APIs Zebra
 
-La configuración de Zebra Data Services en el navegador sigue siendo independiente; véase [api_configuration.md](api_configuration.md).
+La configuración de Zebra Data Services en el navegador es independiente; véase [api_configuration.md](api_configuration.md).

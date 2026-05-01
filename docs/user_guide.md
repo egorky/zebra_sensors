@@ -6,7 +6,7 @@
 
 Al abrir la aplicación verás la pantalla de login.
 
-- El front debe tener configurada **`VITE_BACKEND_URL`** apuntando al API Node (SQLite).
+- Las llamadas de login van al mismo host en **`/api/…`** (SQLite). Solo necesitas **`VITE_BACKEND_URL`** si el front no está en el mismo origen que el API.
 - **Usuario** y **contraseña** se validan en la base SQLite del servidor; la sesión usa **JWT** (del orden de 24 h).
 
 ### Primer administrador
@@ -58,9 +58,9 @@ Más detalle en [api_configuration.md](api_configuration.md).
 
 ## 6. Ejecución
 
-- **`npm run dev`** — un solo comando: front (Vite) y API Node + SQLite. Variables `DEV_*` y `BACKEND_PORT` / `VITE_BACKEND_URL` en el `.env` de la raíz.
-- **`npm start`** — build y luego front estático + API en paralelo. Ver [README](../README.md) y [backend_sqlite.md](backend_sqlite.md).
-- **`npm run preview`** — solo sirve `dist/` sin levantar el API (caso especial).
+- **`npm run dev`** — un solo proceso: Express con Vite en desarrollo y API en **`HOST`** / **`PORT`** (por defecto puerto 5173).
+- **`npm start`** — build y un solo proceso que sirve **`dist/`** + API. Ver [README](../README.md) y [backend_sqlite.md](backend_sqlite.md).
+- **`npm run preview`** — sirve `dist/` ya compilado + API (sin volver a ejecutar el build previo del `prestart`).
 
 ## 7. Documentación Zebra
 

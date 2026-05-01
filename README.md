@@ -2,7 +2,7 @@
 
 Interfaz web para gestionar sensores electrónicos de temperatura **Zebra** mediante las APIs de Management y Data Reporting de Zebra Data Services: configuración de conexión, enrolado de sensores, creación y control de tareas de monitoreo, y consulta de logs y alarmas.
 
-La aplicación está pensada para ejecutarse junto con un **API Node + SQLite** (`server/`) para usuarios (JWT) y respaldo de listados. El front **requiere** `VITE_BACKEND_URL` apuntando a ese servidor.
+Un único proceso **Node (Express)** sirve la SPA y el API (`/api`, SQLite, JWT). **`npm run dev`** usa Vite en modo middleware (hot reload); **`npm start`** sirve `dist/` desde el mismo servidor.
 
 ## Dónde se guarda la información
 
@@ -10,13 +10,13 @@ La aplicación está pensada para ejecutarse junto con un **API Node + SQLite** 
 |-----|--------|
 | **Sensores, tareas, logs, alarmas (datos operativos)** | En **Zebra Data Services** (APIs en la nube). La SPA solo los consulta o modifica en tiempo real. |
 | **URL de Zebra, API key, logo, favicon** | En el **navegador** (`localStorage`) si los guardas desde **Configuración**; si no, valores por defecto del `.env` del front (`VITE_API_*`). |
-| **Sesión de login** | En **`localStorage`**: **JWT** emitido por el API Node (`VITE_BACKEND_URL`). |
+| **Sesión de login** | En **`localStorage`**: **JWT** emitido por el mismo host (`/api/auth/...`). |
 | **Usuarios y copia de listados** | En **SQLite** (`server/data/…`): contraseñas con hash; respaldo de listados de sensores/tareas cuando un administrador refresca esas pantallas. |
 
 ## Características
 
-- **API Node (SQLite):** usuarios, JWT, cambio obligatorio de contraseña en el primer acceso de arranque, sincronización de listados. Ver [docs/backend_sqlite.md](docs/backend_sqlite.md).
-- **Configuración:** Base URL y API key desde la interfaz (localStorage) o valores por defecto desde `.env`.
+- **Un solo puerto:** `HOST` y `PORT` en `.env` (por defecto desarrollo `5173`, producción `4173` si no defines `PORT`).
+- **Configuración Zebra:** Base URL y API key desde la interfaz (localStorage) o valores por defecto desde `.env`.
 - **Branding opcional:** Logo y favicon (localStorage del navegador).
 - **Sensores / Tareas / Inicio / Webhooks** como en versiones anteriores (véase [docs/user_guide.md](docs/user_guide.md)).
 
@@ -38,35 +38,22 @@ npm run server:install
 cp .env.example .env
 ```
 
-Edita **`.env` en la raíz** (único archivo de configuración). Incluye:
+Edita **`.env` en la raíz**: `JWT_SECRET`, `PORT` si lo necesitas, `VITE_API_*` para Zebra. Opcional: **`VITE_BACKEND_URL`** solo si el front se sirve en otro dominio que el API; si está vacío, el cliente usa rutas relativas `/api/...` en el mismo origen.
 
-- **API Node + SQLite:** `BACKEND_PORT` (no uses `PORT` para el API; `PORT` es el del front compilado), `JWT_SECRET`, `DATABASE_PATH`, `CORS_ORIGIN`, `BOOTSTRAP_ADMIN_*`. Debe coincidir **`VITE_BACKEND_URL`** con `http://localhost:<BACKEND_PORT>`.
-- **Vite (dev):** `DEV_HOST`, `DEV_PORT` — usados solo por `npm run dev`.
-- **Vite (estático):** `HOST`, `PORT` — usados al servir `dist/` en `npm start` (junto con el API; el mismo comando levanta ambos).
-- Opcional: `ALLOWED_HOSTS`.
-
-Detalle: [docs/backend_sqlite.md](docs/backend_sqlite.md).
-
-## Backend (SQLite)
-
-- Código en **`server/`**; dependencias nativas: `npm run server:install` una vez.
-- Toda la configuración del proceso Node está en el **`.env` de la raíz** (el servidor carga `../.env` respecto a `server/`).
-- **Primer login:** `admin` / `changeme` por defecto si la base está vacía; la UI exige cambiar la contraseña. Más: [docs/backend_sqlite.md](docs/backend_sqlite.md).
+Detalle del API y SQLite: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 
 ## Scripts npm
 
 | Comando | Uso |
 |--------|-----|
-| `npm run dev` | Arranca **a la vez** el front (Vite, `DEV_*`) y el **API Node** (SQLite, `BACKEND_PORT`). Un solo terminal. |
-| `npm run server:install` | Instala dependencias bajo `server/` (mejor-sqlite3, etc.). |
+| `npm run dev` | Un proceso: Vite (desarrollo) + API en **`PORT`** (por defecto 5173). |
+| `npm run server:install` | Dependencias nativas bajo `server/` (mejor-sqlite3). |
 | `npm run build` | Genera `dist/`. |
-| `npm start` | Compila (`prestart`) y arranca **a la vez** `vite preview` (`HOST`/`PORT`) y el **API Node**. |
-| `npm run preview` | Solo sirve `dist/` con Vite, **sin** levantar el API (por si ya tienes el backend en otro sitio). |
-| `npm run seed` | Añade un usuario a SQLite; ver `package.json` / [docs/backend_sqlite.md](docs/backend_sqlite.md). |
+| `npm start` | Compila y arranca Express sirviendo **`dist/`** + API ( **`NODE_ENV=production`**, `PORT` por defecto 4173 si no lo pones en `.env`). |
+| `npm run preview` | Igual que `start` sin ejecutar el `prestart` (usa `dist/` ya generado). |
+| `npm run seed` | Añade un usuario a SQLite; ver [docs/backend_sqlite.md](docs/backend_sqlite.md). |
 
 ### Producción y PM2
-
-`npm start` ya incluye front + API. Un solo proceso PM2:
 
 ```bash
 pm2 start npm --name zebra-sensor-manager -- start
@@ -81,10 +68,10 @@ Documentación: [docs/api_configuration.md](docs/api_configuration.md), [docs/us
 
 ## Uso rápido
 
-1. Copia `.env.example` → `.`, edita `JWT_SECRET`, `VITE_BACKEND_URL`, etc.
+1. Copia `.env.example` → `.env`, edita al menos `JWT_SECRET`.
 2. `npm install` y `npm run server:install`.
-3. **`npm run dev`** (desarrollo) o **`npm start`** (build + producción local): un solo comando para front y API.
-4. Abre la URL del front (`DEV_PORT` en dev, típicamente 5173; tras `npm start`, `PORT` del front estático, típicamente 4173). Inicia sesión (primer usuario: [backend_sqlite.md](docs/backend_sqlite.md)).
+3. **`npm run dev`** o **`npm start`**.
+4. Abre `http://localhost:<PORT>` (según tu `.env`). Primer usuario: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 
 ## Alineación con las APIs Zebra
 
@@ -95,7 +82,7 @@ Documentación: [docs/api_configuration.md](docs/api_configuration.md), [docs/us
 ## Estructura del repositorio
 
 - **`src/`** — React + Vite.
-- **`server/`** — API Node + SQLite.
+- **`server/`** — Express + SQLite (`/api`).
 - **`docs/`** — guías.
 
 ## Licencia

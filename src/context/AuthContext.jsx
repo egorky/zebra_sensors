@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { normalizeRole, isAdminRole } from '../constants/authRoles';
-import { hasBackendUrl, backendLogin, authChangePassword } from '../services/backendApi';
+import { backendLogin, authChangePassword } from '../services/backendApi';
 
 const AuthContext = createContext(null);
 
@@ -58,9 +58,6 @@ export const AuthProvider = ({ children }) => {
   const isAdmin = useMemo(() => isAdminRole(role), [role]);
 
   const login = async (user, password) => {
-    if (!hasBackendUrl()) {
-      return false;
-    }
     try {
       const data = await backendLogin(user, password);
       const expiresInSec = Number(data.expiresIn) || 86400;

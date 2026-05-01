@@ -10,7 +10,7 @@ import {
 } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminRole } from '../../constants/authRoles';
-import { hasBackendUrl, readBackendAuthFromStorage, syncSensorsToBackend } from '../../services/backendApi';
+import { readBackendAuthFromStorage, syncSensorsToBackend } from '../../services/backendApi';
 
 const Sensors = () => {
   const { role } = useAuth();
@@ -79,7 +79,7 @@ const Sensors = () => {
       const list = data.sensors || [];
       setSensors(list);
       setPageResponse(data.page_response || null);
-      if (isAdminRole(role) && hasBackendUrl() && readBackendAuthFromStorage()?.token && list.length) {
+      if (isAdminRole(role) && readBackendAuthFromStorage()?.token && list.length) {
         syncSensorsToBackend(list).catch(() => {});
       }
     } catch (err) {

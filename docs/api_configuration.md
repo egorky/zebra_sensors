@@ -2,7 +2,7 @@
 
 Para usar la aplicación necesitas la URL base (`baseUrl`) y la clave de API (`apikey`) de Zebra Data Services. Puedes definirlos en la interfaz o en el archivo `.env`.
 
-La aplicación también **requiere** la URL del API propio en **`VITE_BACKEND_URL`** (servidor Node + SQLite). Ver [backend_sqlite.md](backend_sqlite.md).
+El login y los usuarios van contra el **mismo servidor** que sirve la SPA; las rutas del API están bajo **`/api`** (SQLite). Opcionalmente puedes fijar **`VITE_BACKEND_URL`** si el front y el API no comparten origen. Ver [backend_sqlite.md](backend_sqlite.md).
 
 ## Método 1: Interfaz web (recomendado para el día a día)
 
@@ -28,18 +28,13 @@ El botón **Limpiar configuración guardada** elimina del navegador la URL, la A
 ```dotenv
 VITE_API_BASE_URL=https://api.zebra.com/v2
 VITE_API_KEY=tu_api_key_aqui
-VITE_BACKEND_URL=http://localhost:3001
+# Opcional: solo si el front no está en el mismo host/puerto que el API.
+# VITE_BACKEND_URL=
 ```
 
-Variables relacionadas con **Vite**:
+Un solo proceso usa **`HOST`** y **`PORT`** para la web y el API. Variables **`VITE_*`** se inyectan en el cliente en tiempo de compilación; si cambias `.env`, reinicia `npm run dev` o vuelve a ejecutar `npm run build`.
 
-- **`DEV_HOST`**, **`DEV_PORT`** — servidor de desarrollo (`npm run dev`).
-- **`HOST`**, **`PORT`** — servidor que sirve **`dist/`** con `vite preview` (`npm start` / `npm run preview`).
-- **`ALLOWED_HOSTS`** — opcional, lista separada por comas para restricción de hosts en preview.
-
-**Nota:** Las variables `VITE_*` se inyectan en el cliente en tiempo de compilación. Si cambias `.env`, vuelve a ejecutar `npm run dev` o `npm run build` según el modo.
-
-Variables del **servidor API** en el **`.env` de la raíz**: `BACKEND_PORT`, `JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
+Variables del **servidor** en el **`.env` de la raíz**: `JWT_SECRET`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
 
 ## Referencia de APIs Zebra
 
