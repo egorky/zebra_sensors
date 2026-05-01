@@ -8,7 +8,8 @@ Interfaz web para gestionar sensores electrónicos de temperatura **Zebra** medi
 - **Branding opcional:** Logo en la barra lateral y favicon cargados desde archivos locales (guardados en el navegador).
 - **Sensores:** Paginación, filtro de texto, orden, **filtros avanzados** (task_id, estados, fechas de enrolado, batería baja); enrolar / desenrolar; aviso de temperatura no válida (~327,67 °C).
 - **Tareas:** Paginación, filtro en lista, **filtros avanzados** (actualización, MAC de sensor, estados); detalle con **log por cursor**, **alarmas paginadas**, **añadir activo**, asociar sensores y detener tarea.
-- **Webhooks:** resumen en la página de inicio y en `docs/webhooks.md` (esta SPA solo usa polling).
+- **Inicio:** panel tipo dashboard con sensores enrolados, temperatura reciente y un histórico breve (listado + API de lecturas cuando exista).
+- **Webhooks:** documentación en [docs/webhooks.md](docs/webhooks.md) (la app usa polling sobre las APIs REST).
 
 ## Requisitos
 

@@ -162,6 +162,17 @@ export const getSensors = (opts = {}) => {
   return makeApiCall(`/devices/environmental-sensors${q}`);
 };
 
+/**
+ * Lecturas recientes de un sensor (GET …/environmental-sensors/{id}/readings).
+ * Parámetros opcionales según OpenAPI del portal; `task_id` acota a una tarea si la API lo exige.
+ */
+export const getSensorReadings = (sensorId, opts = {}) => {
+  const { limit = 20, task_id } = opts;
+  return makeApiCall(
+    `/devices/environmental-sensors/${encodeURIComponent(sensorId)}/readings${buildQuery({ limit, task_id })}`
+  );
+};
+
 export const enrollSensor = (serialNumber) => {
   return makeApiCall('/devices/sensor-enrollments', {
     method: 'POST',

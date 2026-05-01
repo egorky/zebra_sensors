@@ -22,7 +22,8 @@ Este documento relaciona la documentación pública de Zebra con lo que **Zebra 
 | Management | Detener tarea | Sí |
 | Data reporting | Obtener el log completo de datos de una tarea | Sí — log con `limit` + **cursor** (`nextCursor`), filtros opcionales |
 | Listados auxiliares | Listar sensores del tenant, detalle de tarea | Sí — **paginación**, `text_filter`, orden |
-| Webhooks (documentación) | Eventos push vs polling | Explicado en [docs/webhooks.md](webhooks.md) e inicio de la app (sin receptor en esta SPA) |
+| Lecturas por sensor | `GET …/devices/environmental-sensors/{id}/readings` (parámetros según OpenAPI) | Sí — **Inicio** (histórico breve); la forma del JSON puede variar |
+| Webhooks (documentación) | Eventos push vs polling | Explicado en [docs/webhooks.md](webhooks.md) (sin receptor en esta SPA) |
 
 ## Activos en tarea
 

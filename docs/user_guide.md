@@ -13,9 +13,11 @@ Al abrir la aplicación verás la pantalla de login.
 
 En la parte inferior del menú lateral, **Cerrar sesión** te devuelve a la pantalla de login.
 
-## 2. Inicio
+## 2. Inicio (panel principal)
 
-La página principal incluye un apartado sobre **webhooks frente a polling**, con enlaces a la documentación Zebra y a [docs/webhooks.md](webhooks.md).
+Vista tipo **dashboard**: total de sensores, resumen de estado, tarjeta por sensor con **temperatura actual** (última conocida del listado) y un **histórico breve** (lecturas vía `GET …/environmental-sensors/{id}/readings` cuando la API lo permita; si falla o viene vacío, se muestra la última lectura no verificada del listado). Botón **Actualizar** y enlace a **Sensores** para la gestión completa.
+
+Sobre webhooks vs polling, véase [webhooks.md](webhooks.md) (no forma parte de esta pantalla).
 
 ## 3. Configuración
 
