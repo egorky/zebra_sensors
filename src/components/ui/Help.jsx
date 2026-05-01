@@ -341,7 +341,7 @@ const Help = () => {
               Un único archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> en la raíz configura la web y el API (SQLite bajo <code className="bg-gray-100 px-1 rounded text-sm">/api</code>). El puerto es uno solo: <code className="bg-gray-100 px-1 rounded text-sm">PORT</code> (y <code className="bg-gray-100 px-1 rounded text-sm">HOST</code>).
             </li>
             <li>
-              <strong>Desarrollo</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> ejecuta Express con Vite en modo middleware (hot reload). Dependencias nativas del API: una vez <code className="bg-gray-100 px-1 rounded text-sm">npm run server:install</code>.
+              <strong>Desarrollo</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> ejecuta Express con Vite en modo middleware (hot reload). Instala dependencias una vez en la raíz con <code className="bg-gray-100 px-1 rounded text-sm">npm install</code> (incluye Express y SQLite).
             </li>
             <li>
               <strong>Producción local</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm start</code> compila y sirve <code className="bg-gray-100 px-1 rounded text-sm">dist/</code> desde el mismo proceso que el API.

@@ -31,8 +31,11 @@ Un único proceso **Node (Express)** sirve la SPA y el API (`/api`, SQLite, JWT)
 git clone <tu-repo>
 cd zebra_sensors
 npm install
-npm run server:install
 ```
+
+(Un único `npm install` en la raíz instala el front y las dependencias del API — Express, SQLite, etc.)
+
+Opcional: `npm run server:install` es un alias del mismo comando por compatibilidad.
 
 ```bash
 cp .env.example .env
@@ -47,7 +50,7 @@ Detalle del API y SQLite: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 | Comando | Uso |
 |--------|-----|
 | `npm run dev` | Un proceso: Vite (desarrollo) + API en **`PORT`** (por defecto 5173). |
-| `npm run server:install` | Dependencias nativas bajo `server/` (mejor-sqlite3). |
+| `npm run server:install` | Alias de `npm install` en la raíz (compatibilidad). |
 | `npm run build` | Genera `dist/`. |
 | `npm start` | Compila y arranca Express sirviendo **`dist/`** + API ( **`NODE_ENV=production`**, `PORT` por defecto 4173 si no lo pones en `.env`). |
 | `npm run preview` | Igual que `start` sin ejecutar el `prestart` (usa `dist/` ya generado). |
@@ -69,7 +72,7 @@ Documentación: [docs/api_configuration.md](docs/api_configuration.md), [docs/us
 ## Uso rápido
 
 1. Copia `.env.example` → `.env`, edita al menos `JWT_SECRET`.
-2. `npm install` y `npm run server:install`.
+2. `npm install` en la raíz del repo.
 3. **`npm run dev`** o **`npm start`**.
 4. Abre `http://localhost:<PORT>` (según tu `.env`). Primer usuario: [docs/backend_sqlite.md](docs/backend_sqlite.md).
 
