@@ -505,6 +505,12 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
           <h4 className="font-semibold text-gray-800 flex items-center gap-2">
             <Package size={18} /> Añadir activo a la tarea
           </h4>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Vincula un <strong>activo logístico</strong> (unidad de carga, producto, contenedor, etc.) a la tarea de monitorización para que Zebra lo asocie al
+            seguimiento de temperatura. El identificador suele ser un código <strong>GS1</strong> (por ejemplo un GTIN o una URI GS1 digital link) según tu
+            proceso; en esta pantalla solo está el formato <code className="bg-gray-100 px-1 rounded text-xs">ASSET_ID_FORMAT_GS1_URI</code> admitido por la
+            API. Consulta la documentación de gestión Zebra si tu tenant usa otros <code className="bg-gray-100 px-1 rounded text-xs">id_format</code>.
+          </p>
           <div className="flex flex-col md:flex-row gap-3 md:items-end">
             <label className="flex-1 text-sm">
               <span className="block text-gray-600 mb-1">Identificador del activo</span>

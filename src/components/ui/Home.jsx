@@ -44,6 +44,29 @@ function readingTemperature(row) {
   return undefined;
 }
 
+/** Texto breve a partir del objeto sensor del listado Zebra (unverified, alarm_count, status). */
+function sensorLastAlarmSummary(sensor) {
+  const bits = [];
+  const unv = sensor.unverified;
+  if (unv && unv.last_alarm !== undefined && unv.last_alarm !== null && unv.last_alarm !== '') {
+    const la = unv.last_alarm;
+    const truthy = la === true || la === 1 || la === '1' || String(la).toLowerCase() === 'true';
+    const falsy = la === false || la === 0 || la === '0' || String(la).toLowerCase() === 'false';
+    if (truthy) bits.push('Última lectura no verificada: alarma activa');
+    else if (falsy) bits.push('Última lectura no verificada: sin alarma');
+    else bits.push(`Última alarma (no verificada): ${String(la)}`);
+  }
+  const ac = sensor.alarm_count;
+  if (ac != null && ac !== '' && !Number.isNaN(Number(ac)) && Number(ac) > 0) {
+    bits.push(`${Number(ac)} registro(s) de alarma en la tarea`);
+  }
+  if (String(sensor.status || '').includes('WITH_ALARM')) {
+    bits.push('Estado del sensor: con alarma');
+  }
+  if (!bits.length) return null;
+  return bits.join(' · ');
+}
+
 const Home = () => {
   const [sensors, setSensors] = useState([]);
   const [pageInfo, setPageInfo] = useState(null);
@@ -196,6 +219,7 @@ const Home = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {sensors.map((s, index) => {
             const h = histories[s.id];
+            const alarmSummary = sensorLastAlarmSummary(s);
             const lastDt = s.unverified?.last_date_time;
             const lastTemp = s.unverified?.last_temperature;
             const fallbackRow =
@@ -232,6 +256,22 @@ const Home = () => {
                       <p className="text-xs uppercase tracking-wide text-gray-500">Temperatura actual (última conocida)</p>
                       <p className="text-2xl font-bold text-gray-900">{formatZebraTemperature(lastTemp)}</p>
                       {lastDt && <p className="text-xs text-gray-500 mt-1">{new Date(lastDt).toLocaleString()}</p>}
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
+                      (alarmSummary && alarmSummary.includes('alarma activa')) || String(s.status || '').includes('WITH_ALARM')
+                        ? 'border-amber-200 bg-amber-50 text-amber-950'
+                        : 'border-gray-200 bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600" aria-hidden />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Última alarma / estado</p>
+                      <p className="mt-0.5 leading-snug">
+                        {alarmSummary ||
+                          'El listado de sensores no incluye detalle de alarma para este equipo (puedes ver alarmas completas en Tareas → detalle de la tarea).'}
+                      </p>
                     </div>
                   </div>
                 </div>

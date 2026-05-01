@@ -56,7 +56,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
 - Al expandir una tarea:
   - **Log de datos** — primera página con límite configurable; **Cargar más** usa el `cursor` devuelto por la API; filtros opcionales de tiempo y sensor; tabla resumida y JSON de la última página.
   - **Alarmas** — páginas con **Cargar página 1** y **Siguiente página**; tabla con temperaturas formateadas.
-  - **Añadir activo** — cuerpo según API (`asset`, `id_format`).
+  - **Añadir activo** — enlaza un identificador de negocio (p. ej. GS1 / URI de activo logístico) a la tarea vía API (`asset`, `id_format`; en la app, `ASSET_ID_FORMAT_GS1_URI`). No sustituye a “asociar sensor”.
   - **Asociar sensor**, **Detener tarea**.
 
 - **Copia en servidor:** con usuario **administrador u operador**, al cargar la lista desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).

@@ -27,7 +27,7 @@ Este documento relaciona la documentación pública de Zebra con lo que **Zebra 
 
 ## Activos en tarea
 
-**`addTaskAsset`** está expuesto en el detalle de tarea (formulario activo + `id_format`, p. ej. `ASSET_ID_FORMAT_GS1_URI`).
+**`addTaskAsset`** (detalle de tarea): asocia un **activo** —identificador de cadena de suministro (p. ej. URI GS1)— a la tarea de monitorización, distinto de asociar un **sensor**. Cuerpo `asset` + `id_format` (la UI usa `ASSET_ID_FORMAT_GS1_URI` como en la colección Postman).
 
 ## Parámetros y límites
 

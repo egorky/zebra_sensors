@@ -295,7 +295,15 @@ const Help = () => {
 
         <Section id="activos" title="Activos en la tarea">
           <p>
-            Bloque <strong>Añadir activo a la tarea</strong>: rellena <strong>Identificador del activo</strong> y <strong>id_format</strong>, luego pulsa <strong>Añadir activo</strong>. La petición sigue el cuerpo esperado por la API de gestión Zebra.
+            Un <strong>activo</strong> en este contexto es un identificador de negocio que quieres <strong>asociar a la tarea</strong> en Zebra Data Services (por
+            ejemplo un pallet, un lote, un envío o un producto rastreado con <strong>GS1</strong>), no el sensor en sí (los sensores se asocian con <strong>Asociar sensor</strong>).
+          </p>
+          <p>
+            En el formulario <strong>Añadir activo a la tarea</strong> introduces el <strong>identificador</strong> (típicamente una cadena en formato URI GS1
+            digital link o el identificador que exija tu cadena de suministro) y el <strong>id_format</strong>. La app ofrece por defecto{' '}
+            <code className="bg-gray-100 px-1 rounded text-sm">ASSET_ID_FORMAT_GS1_URI</code>, alineado con la colección Postman oficial; otros formatos dependen
+            de lo que publique la OpenAPI de tu entorno. La petición es un <code className="bg-gray-100 px-1 rounded text-sm">POST</code> a la API de gestión de
+            sensores de temperatura.
           </p>
         </Section>
 
