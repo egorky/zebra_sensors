@@ -4,19 +4,14 @@
  * personalizado en la UI o amplía estas listas.
  */
 
-/** Listado GET /devices/environmental-sensors — Postman solo muestra SORT_FIELD_NAME; otros son habituales en APIs similares. */
-export const SENSOR_SORT_FIELDS = [
-  { value: 'SORT_FIELD_NAME', label: 'Nombre' },
-  { value: 'SORT_FIELD_SERIAL_NUMBER', label: 'Número de serie' },
-  { value: 'SORT_FIELD_LAST_UPDATED', label: 'Última actualización' },
-];
+/**
+ * Listado GET /devices/environmental-sensors — en Postman aparece SORT_FIELD_NAME.
+ * Otros valores deben coincidir con el OpenAPI del portal; usa «sort_field personalizado» en la UI si el enum difiere.
+ */
+export const SENSOR_SORT_FIELDS = [{ value: 'SORT_FIELD_NAME', label: 'Nombre' }];
 
-/** Listado GET /environmental/tasks */
-export const TASK_SORT_FIELDS = [
-  { value: 'SORT_FIELD_NAME', label: 'Nombre' },
-  { value: 'SORT_FIELD_UPDATED', label: 'Actualización (metadatos)' },
-  { value: 'SORT_FIELD_CREATED', label: 'Creación' },
-];
+/** Listado GET /environmental/tasks — Postman usa SORT_FIELD_NAME por defecto. */
+export const TASK_SORT_FIELDS = [{ value: 'SORT_FIELD_NAME', label: 'Nombre' }];
 
 /** Filtro `statuses` en sensores (dispositivo). */
 export const SENSOR_DEVICE_STATUSES = [
