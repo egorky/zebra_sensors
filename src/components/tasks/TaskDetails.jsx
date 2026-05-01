@@ -11,7 +11,7 @@ import {
 import { StopCircle, Plus, Download, AlertTriangle, BellRing, Package } from 'lucide-react';
 import { formatZebraTemperature, isInvalidZebraTemperature } from '../../utils/zebraReadings';
 import { useAuth } from '../../context/AuthContext';
-import { isAdminRole } from '../../constants/authRoles';
+import { canManageZebraContent } from '../../constants/authRoles';
 
 const ASSET_FORMAT_OPTIONS = ['ASSET_ID_FORMAT_GS1_URI'];
 
@@ -44,7 +44,7 @@ function flattenLogRows(payload) {
 
 const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
   const { role } = useAuth();
-  const canManageTask = isAdminRole(role);
+  const canManageTask = canManageZebraContent(role);
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadError, setLoadError] = useState('');

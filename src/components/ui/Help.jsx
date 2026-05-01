@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 const Section = ({ id, title, children }) => (
   <section id={id} className="scroll-mt-8 border-b border-gray-200 pb-8 last:border-0 last:pb-0">
     <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
@@ -9,25 +8,15 @@ const Section = ({ id, title, children }) => (
 );
 
 const Help = () => {
-  const { isAdmin } = useAuth();
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Ayuda</h1>
       <p className="text-gray-600 mb-8">
-        Guía de uso de esta aplicación. Los nombres de menús coinciden con la barra lateral.{' '}
-        {isAdmin ? (
-          <>
-            Para la URL de la API de Zebra y la clave de aplicación, usa{' '}
-            <Link to="/config" className="text-blue-600 underline font-medium">
-              Configuración
-            </Link>{' '}
-            o define valores por defecto en el archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> del despliegue (<code className="bg-gray-100 px-1 rounded text-sm">VITE_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded text-sm">VITE_API_KEY</code>).
-          </>
-        ) : (
-          <>
-            La URL de la API y la clave de aplicación las configura un administrador; en tu sesión se usan los valores ya guardados en este navegador o, si no hay ninguno, los del <code className="bg-gray-100 px-1 rounded text-sm">.env</code> con el que se compiló la app.
-          </>
-        )}
+        Guía de uso de esta aplicación. Los nombres de menús coinciden con la barra lateral. Para la URL de la API de Zebra y la clave de aplicación, usa{' '}
+        <Link to="/config" className="text-blue-600 underline font-medium">
+          Configuración
+        </Link>{' '}
+        o define valores por defecto en el archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> del despliegue (<code className="bg-gray-100 px-1 rounded text-sm">VITE_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded text-sm">VITE_API_KEY</code>). En el navegador, lo guardado desde la interfaz sustituye a esos valores por defecto.
       </p>
 
       <nav className="mb-10 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
@@ -126,7 +115,7 @@ const Help = () => {
               <strong>Navegador (localStorage)</strong>: la <strong>configuración de conexión</strong> a Zebra (Base URL, API key) y el <strong>branding</strong> (logo, favicon) si los guardas desde la interfaz. La <strong>sesión de login</strong> (token JWT) también se guarda aquí.
             </li>
             <li>
-              <strong>Servidor Node con SQLite</strong> (<code className="bg-gray-100 px-1 rounded text-sm">server/</code>, rutas <code className="bg-gray-100 px-1 rounded text-sm">/api</code> en el mismo puerto que la web): <strong>usuarios</strong> (hash de contraseña) y <strong>copia de listados</strong> de sensores y tareas cuando un administrador refresca esas pantallas (respaldo ligero; la fuente de verdad sigue siendo Zebra).
+              <strong>Servidor Node con SQLite</strong> (<code className="bg-gray-100 px-1 rounded text-sm">server/</code>, rutas <code className="bg-gray-100 px-1 rounded text-sm">/api</code> en el mismo puerto que la web): <strong>usuarios</strong> (hash de contraseña) y <strong>copia de listados</strong> de sensores y tareas cuando un usuario con permisos de gestión refresca esas pantallas (respaldo ligero; la fuente de verdad sigue siendo Zebra).
             </li>
           </ul>
         </Section>
@@ -150,13 +139,13 @@ const Help = () => {
                 <tr className="border-b">
                   <td className="py-2 px-3 font-medium whitespace-nowrap">administrador (<code className="bg-gray-100 px-1 rounded">admin</code>)</td>
                   <td className="py-2 px-3">
-                    Todo: menú <strong>Configuración</strong> (URL de API, clave, logo y favicon), enrolar y desenrolar sensores, crear y detener tareas, asociar sensores, añadir activos, consultar logs y alarmas.
+                    Igual que operador en Zebra (configuración, sensores, tareas, logs, alarmas, activos) <strong>más</strong> el menú <strong>Usuarios</strong> para crear y eliminar cuentas de acceso a esta aplicación.
                   </td>
                 </tr>
                 <tr>
                   <td className="py-2 px-3 font-medium whitespace-nowrap">operador (<code className="bg-gray-100 px-1 rounded">operator</code>)</td>
                   <td className="py-2 px-3">
-                    Solo lectura y consulta: <strong>Inicio</strong>, <strong>Sensores</strong> y <strong>Tareas</strong> (listados, detalles, logs y alarmas). No ve Configuración ni acciones que modifiquen Zebra (enrolar, desenrolar, crear o detener tareas, asociar sensores ni añadir activos).
+                    <strong>Inicio</strong>, <strong>Configuración</strong> (URL y clave de Zebra, branding), <strong>Sensores</strong> y <strong>Tareas</strong>: enrolar y desenrolar, crear y detener tareas, asociar sensores, añadir activos, listados, detalles, logs y alarmas. <strong>No</strong> puede abrir <strong>Usuarios</strong> ni crear o borrar cuentas de la app.
                   </td>
                 </tr>
               </tbody>
@@ -175,8 +164,7 @@ const Help = () => {
 
         <Section id="requisitos" title="Requisitos y configuración (API y apariencia)">
           <p>
-            Los operadores usan la misma URL y clave de Zebra que ya estén guardadas en el navegador o las del <code className="bg-gray-100 px-1 rounded text-sm">.env</code>; solo un <strong>administrador</strong> puede abrir la pantalla de{' '}
-            {isAdmin ? <Link to="/config" className="text-blue-600 underline">Configuración</Link> : <strong>Configuración</strong>} para cambiarlas.
+            Cualquier usuario autenticado puede abrir <Link to="/config" className="text-blue-600 underline">Configuración</Link> para cambiar la URL y la clave de Zebra (y el branding) en este navegador; si no guardas nada, se usan los valores del <code className="bg-gray-100 px-1 rounded text-sm">.env</code> con el que se compiló la app.
           </p>
           <p>
             La clave de aplicación de Zebra se obtiene en el{' '}
@@ -194,9 +182,6 @@ const Help = () => {
         </Section>
 
         <Section id="enrolar" title="Enrolar sensores">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo usuarios con rol <strong>administrador</strong>. Los operadores ven la lista pero no el formulario de enrolado.
-          </p>
           <ol className="list-decimal list-inside space-y-2">
             <li>
               Abre <Link to="/sensors" className="text-blue-600 underline">Sensores</Link>.
@@ -211,9 +196,6 @@ const Help = () => {
         </Section>
 
         <Section id="desenrolar" title="Desenrolar (eliminar el enrolado de un sensor)">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo <strong>administrador</strong>; los operadores no ven la columna de acciones de desenrolado.
-          </p>
           <p>
             En <Link to="/sensors" className="text-blue-600 underline">Sensores</Link>, en cada fila de la tabla hay un botón <strong>Desenrolar</strong>. Al pulsarlo, la aplicación pide confirmación y llama a la API para solicitar el desenrolado del sensor por número de serie.
           </p>
@@ -249,9 +231,6 @@ const Help = () => {
         </Section>
 
         <Section id="tareas-crear" title="Crear tareas">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo <strong>administrador</strong>; el botón <strong>Crear Tarea</strong> no aparece para operadores.
-          </p>
           <ol className="list-decimal list-inside space-y-2">
             <li>
               Abre <Link to="/tasks" className="text-blue-600 underline">Tareas</Link>.
@@ -266,9 +245,6 @@ const Help = () => {
         </Section>
 
         <Section id="tareas-asociar" title="Asociar sensores a una tarea">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo <strong>administrador</strong>.
-          </p>
           <ol className="list-decimal list-inside space-y-2">
             <li>
               En <Link to="/tasks" className="text-blue-600 underline">Tareas</Link>, haz clic en una tarea para expandir el panel de detalle.
@@ -283,9 +259,6 @@ const Help = () => {
         </Section>
 
         <Section id="tareas-detener" title="Detener una tarea">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo <strong>administrador</strong>.
-          </p>
           <p>
             Con el detalle de la tarea expandido, pulsa <strong>Detener Tarea</strong>. La aplicación pide confirmación y llama a la API para detener el monitoreo de esa tarea.
           </p>
@@ -321,9 +294,6 @@ const Help = () => {
         </Section>
 
         <Section id="activos" title="Activos en la tarea">
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Solo <strong>administrador</strong>.
-          </p>
           <p>
             Bloque <strong>Añadir activo a la tarea</strong>: rellena <strong>Identificador del activo</strong> y <strong>id_format</strong>, luego pulsa <strong>Añadir activo</strong>. La petición sigue el cuerpo esperado por la API de gestión Zebra.
           </p>

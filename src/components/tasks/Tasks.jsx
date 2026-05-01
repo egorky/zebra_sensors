@@ -5,12 +5,12 @@ import CreateTaskModal from './CreateTaskModal';
 import TaskDetails from './TaskDetails';
 import { TASK_SORT_FIELDS, TASK_STATUSES } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
-import { isAdminRole } from '../../constants/authRoles';
+import { canManageZebraContent } from '../../constants/authRoles';
 import { readBackendAuthFromStorage, syncTasksToBackend } from '../../services/backendApi';
 
 const Tasks = () => {
   const { role } = useAuth();
-  const canManageTasks = isAdminRole(role);
+  const canManageTasks = canManageZebraContent(role);
   const [tasks, setTasks] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
   const [page, setPage] = useState(0);

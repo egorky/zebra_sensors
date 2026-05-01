@@ -13,9 +13,14 @@ Al abrir la aplicación verás la pantalla de login.
 
 Si la base de datos del servidor no tenía usuarios, el primer arranque crea un administrador según `BOOTSTRAP_ADMIN_*` en el `.env` de la raíz (por defecto **usuario `admin`**, **contraseña `changeme`**). Debes **cambiar esa contraseña** en la pantalla inicial antes de usar el resto de la aplicación. Detalle: [backend_sqlite.md](backend_sqlite.md).
 
-### Usuarios (administrador)
+### Usuarios (solo administrador)
 
-Menú **Usuarios**: crear y eliminar cuentas (roles `admin` y `operator`).
+Menú **Usuarios**: crear y eliminar cuentas de acceso a la app (roles `admin` y `operator`). Solo lo ven los usuarios con rol **administrador**.
+
+### Roles (administrador y operador)
+
+- **Operador** (`operator`): gestión completa en Zebra — **Configuración**, **Sensores** (enrolar / desenrolar), **Tareas** (crear, detener, asociar sensores, activos, logs, alarmas). No puede abrir **Usuarios**.
+- **Administrador** (`admin`): lo mismo que el operador **más** el menú **Usuarios**.
 
 ### Cerrar sesión
 
@@ -42,7 +47,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
 - **Paginación** — tamaño de página y botones anterior/siguiente; se muestra el total según la API.
 - **Última temperatura** — si aparece como no válida (~327,67 °C), el sensor puede estar saliendo de reposo; es el comportamiento descrito por Zebra.
 - **Refrescar**, **Enrolar**, **Desenrolar** como antes.
-- **Copia en servidor:** cada vez que un **administrador** carga la lista desde Zebra, la app puede enviar un snapshot a SQLite (`sensor_snapshots`) como respaldo del último listado visto.
+- **Copia en servidor:** cada vez que un usuario **administrador u operador** carga la lista desde Zebra, la app puede enviar un snapshot a SQLite (`sensor_snapshots`) como respaldo del último listado visto.
 
 ## 5. Tareas
 
@@ -54,7 +59,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
   - **Añadir activo** — cuerpo según API (`asset`, `id_format`).
   - **Asociar sensor**, **Detener tarea**.
 
-- **Copia en servidor:** con usuario administrador, al cargar la lista desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).
+- **Copia en servidor:** con usuario **administrador u operador**, al cargar la lista desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).
 
 ## 6. Ejecución
 

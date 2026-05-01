@@ -9,12 +9,12 @@ import {
   SENSOR_TASK_STATUSES,
 } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
-import { isAdminRole } from '../../constants/authRoles';
+import { canManageZebraContent } from '../../constants/authRoles';
 import { readBackendAuthFromStorage, syncSensorsToBackend } from '../../services/backendApi';
 
 const Sensors = () => {
   const { role } = useAuth();
-  const canManageSensors = isAdminRole(role);
+  const canManageSensors = canManageZebraContent(role);
   const tableCols = canManageSensors ? 8 : 7;
   const [sensors, setSensors] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
@@ -79,7 +79,7 @@ const Sensors = () => {
       const list = data.sensors || [];
       setSensors(list);
       setPageResponse(data.page_response || null);
-      if (isAdminRole(role) && readBackendAuthFromStorage()?.token && list.length) {
+      if (canManageZebraContent(role) && readBackendAuthFromStorage()?.token && list.length) {
         syncSensorsToBackend(list).catch(() => {});
       }
     } catch (err) {

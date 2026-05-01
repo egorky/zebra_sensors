@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
 
   const allNavItems = [
     { path: '/', icon: Home, label: 'Inicio', description: 'Página principal' },
-    { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL', adminOnly: true },
+    { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL' },
     { path: '/users', icon: UserCog, label: 'Usuarios', description: 'SQLite en el servidor', adminOnly: true },
     { path: '/sensors', icon: Radio, label: 'Sensores', description: 'Gestionar sensores' },
     { path: '/tasks', icon: ClipboardList, label: 'Tareas', description: 'Gestionar tareas' },

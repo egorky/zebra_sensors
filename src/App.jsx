@@ -54,14 +54,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<Home />} />
-            <Route
-              path="/config"
-              element={
-                <AdminRoute>
-                  <Configuration />
-                </AdminRoute>
-              }
-            />
+            <Route path="/config" element={<Configuration />} />
             <Route
               path="/users"
               element={
