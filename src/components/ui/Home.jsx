@@ -95,11 +95,10 @@ const Home = () => {
       const updates = {};
       await Promise.all(
         subset.map(async (s) => {
-          const taskId = s.most_recent?.task_id || undefined;
           try {
             const raw = await getSensorReadings(s.id, {
               limit: 20,
-              task_id: taskId && String(taskId).trim() ? taskId : undefined,
+              skipErrorLog: true,
             });
             const rows = extractReadingRows(raw).slice(0, HISTORY_ROWS_SHOW);
             updates[s.id] = { status: 'ok', rows, rawEmpty: rows.length === 0 };

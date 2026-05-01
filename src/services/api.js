@@ -32,6 +32,25 @@ function buildQuery(obj) {
   return s ? `?${s}` : '';
 }
 
+function trimTrailingSlash(url) {
+  return String(url || '').replace(/\/+$/, '');
+}
+
+/**
+ * Ruta del log de datos de una tarea (Data Reporting).
+ * Postman usa base `…/v2/data/environmental` + `/tasks/{id}/log`.
+ * Con base típica `…/v2` de esta app, el prefijo es `/data/environmental/tasks/…`.
+ */
+function taskDataLogPath(taskId, querySuffix) {
+  const base = trimTrailingSlash(getConfig().baseUrl);
+  const id = encodeURIComponent(taskId);
+  const q = querySuffix || '';
+  if (/\/data\/environmental$/i.test(base)) {
+    return `/tasks/${id}/log${q}`;
+  }
+  return `/data/environmental/tasks/${id}/log${q}`;
+}
+
 // --- Configuration Management ---
 export const saveConfig = (config) => {
   try {
@@ -82,7 +101,9 @@ export const makeApiCall = async (endpoint, options = {}) => {
     throw new Error('API Base URL or API Key is not configured. Please configure it in the settings page.');
   }
 
-  const url = `${baseUrl}${endpoint}`;
+  const base = trimTrailingSlash(baseUrl);
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${base}${path}`;
 
   const headers = {
     Accept: 'application/json',
@@ -94,8 +115,9 @@ export const makeApiCall = async (endpoint, options = {}) => {
     headers['Content-Type'] = 'application/json';
   }
 
+  const { skipErrorLog, ...fetchOptions } = options;
   const config = {
-    ...options,
+    ...fetchOptions,
     headers,
   };
 
@@ -112,14 +134,26 @@ export const makeApiCall = async (endpoint, options = {}) => {
       errorData = { message: errorText };
     }
 
-    console.error('API Call Failed:', {
-      url: url,
-      requestOptions: config,
-      responseStatus: response.status,
-      responseBody: errorText,
-    });
+    if (!skipErrorLog) {
+      console.error('API Call Failed:', {
+        url: url,
+        requestOptions: config,
+        responseStatus: response.status,
+        responseBody: errorText,
+      });
+    }
 
-    throw new Error(`API call failed with status ${response.status}: ${errorData.message || 'Unknown error'}`);
+    let hint = '';
+    if (response.status === 404 && path.includes('/log')) {
+      hint =
+        ' Si usas la API de datos, comprueba en developer.zebra.com que la aplicación tenga plan/acceso a **Data Reporting**; la base suele ser `https://api.zebra.com/v2` y esta app añade `/data/environmental/…`, o configura la base exactamente como en la colección Postman (`…/v2/data/environmental`).';
+    }
+    if (response.status === 501 && path.includes('/readings')) {
+      hint =
+        ' El endpoint de lecturas puede no aceptar el filtro usado; prueba sin `task_id` en la petición o revisa la OpenAPI de Management en developer.zebra.com.';
+    }
+
+    throw new Error(`API call failed with status ${response.status}: ${errorData.message || 'Unknown error'}${hint}`);
   }
 
   if (response.status === 200 && options.method === 'DELETE') {
@@ -164,12 +198,17 @@ export const getSensors = (opts = {}) => {
 
 /**
  * Lecturas recientes de un sensor (GET …/environmental-sensors/{id}/readings).
- * Parámetros opcionales según OpenAPI del portal; `task_id` acota a una tarea si la API lo exige.
+ * En muchos despliegues Zebra, el query `task_id` provoca 501 «Method Not Allowed»; solo se envía si lo pasas explícitamente y no está vacío.
  */
 export const getSensorReadings = (sensorId, opts = {}) => {
-  const { limit = 20, task_id } = opts;
+  const { limit = 20, task_id, skipErrorLog } = opts;
+  const params = { limit };
+  if (task_id != null && String(task_id).trim() !== '') {
+    params.task_id = task_id;
+  }
   return makeApiCall(
-    `/devices/environmental-sensors/${encodeURIComponent(sensorId)}/readings${buildQuery({ limit, task_id })}`
+    `/devices/environmental-sensors/${encodeURIComponent(sensorId)}/readings${buildQuery(params)}`,
+    { skipErrorLog: Boolean(skipErrorLog) }
   );
 };
 
@@ -265,7 +304,7 @@ export const getTaskLogPage = (taskId, opts = {}) => {
     sensorTaskId,
     deviceId,
   });
-  return makeApiCall(`/data/environmental/tasks/${taskId}/log${q}`);
+  return makeApiCall(taskDataLogPath(taskId, q));
 };
 
 export const getTaskAlarmsPage = (taskId, { page = 0, pageSize = 50, sort_order = 'SORT_ORDER_DESC' } = {}) => {

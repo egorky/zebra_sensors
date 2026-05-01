@@ -22,7 +22,7 @@ Este documento relaciona la documentación pública de Zebra con lo que **Zebra 
 | Management | Detener tarea | Sí |
 | Data reporting | Obtener el log completo de datos de una tarea | Sí — log con `limit` + **cursor** (`nextCursor`), filtros opcionales |
 | Listados auxiliares | Listar sensores del tenant, detalle de tarea | Sí — **paginación**, `text_filter`, orden |
-| Lecturas por sensor | `GET …/devices/environmental-sensors/{id}/readings` (parámetros según OpenAPI) | Sí — **Inicio** (histórico breve); la forma del JSON puede variar |
+| Lecturas por sensor | `GET …/devices/environmental-sensors/{id}/readings` (p. ej. `limit`; el query `task_id` puede devolver **501** en la nube Zebra) | Sí — **Inicio** (histórico breve sin `task_id`); la forma del JSON puede variar |
 | Webhooks (documentación) | Eventos push vs polling | Explicado en [docs/webhooks.md](webhooks.md) (sin receptor en esta SPA) |
 
 ## Activos en tarea
@@ -32,7 +32,7 @@ Este documento relaciona la documentación pública de Zebra con lo que **Zebra 
 ## Parámetros y límites
 
 - Sensores y tareas: `page`, `size`, `text_filter`, `sort_field` / `sort_order`. La pantalla incluye **filtros avanzados** alineados con Postman (`task_id`, `statuses`, `sensor_task_statuses`, `enrolled_*`, `exclude_low_battery`; en tareas `updated_*`, `sensor_mac_address`, `statuses`). Los valores de estado y ordenación editables están en `src/constants/zebraFilters.js` (incluye ampliaciones respecto a Postman y **TASK_STATUS_STOP_PENDING** de la guía Zebra); puedes **anular `sort_field`** con el campo de texto opcional en filtros avanzados si tu OpenAPI usa otro enum.
-- Log de datos: `GET .../data/environmental/tasks/{id}/log` con `limit` (1–14000), `cursor` para la página siguiente, y opcionalmente `startTime`, `endTime`, `sensorTaskId`, `deviceId` (véase Postman / portal).
+- Log de datos: según la [colección Postman](https://github.com/ZebraDevs/ZDS-Electronic_Temperature_Sensors-Postman_Collection), la base de **Data Reporting** es `https://api.zebra.com/v2/data/environmental` y el path relativo es `/tasks/{id}/log`. Con base `https://api.zebra.com/v2`, esta app usa `GET .../data/environmental/tasks/{id}/log`. Parámetros: `limit` (1–14000), `cursor`, y opcionalmente `startTime`, `endTime`, `sensorTaskId`, `deviceId`. Si obtienes **404**, comprueba que la clave de aplicación tenga acceso al producto **Data Reporting** en el portal Zebra.
 - Alarmas de tarea: `page.page` y `page.size` en la query.
 - Lectura **327,67 °C**: la app la trata como valor no válido (sensor despertando), según la guía de listado ZS300.
 
