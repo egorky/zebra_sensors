@@ -10,6 +10,17 @@ const Tasks = () => {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [cachedDetails, setCachedDetails] = useState({});
+
+  const handleDetailUpdate = (taskId, detailType, data) => {
+    setCachedDetails(prev => ({
+      ...prev,
+      [taskId]: {
+        ...prev[taskId],
+        [detailType]: data,
+      }
+    }));
+  };
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -107,7 +118,11 @@ const Tasks = () => {
                     {selectedTaskId === task.id && (
                       <tr>
                         <td colSpan="6" className="p-4 bg-gray-50">
-                          <TaskDetails taskId={task.id} />
+                          <TaskDetails
+                            taskId={task.id}
+                            cachedData={cachedDetails[task.id]}
+                            onDetailUpdate={handleDetailUpdate}
+                          />
                         </td>
                       </tr>
                     )}
