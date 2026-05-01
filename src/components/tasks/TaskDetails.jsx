@@ -10,6 +10,8 @@ import {
 } from '../../services/api';
 import { StopCircle, Plus, Download, AlertTriangle, BellRing, Package } from 'lucide-react';
 import { formatZebraTemperature, isInvalidZebraTemperature } from '../../utils/zebraReadings';
+import { useAuth } from '../../context/AuthContext';
+import { isAdminRole } from '../../constants/authRoles';
 
 const ASSET_FORMAT_OPTIONS = ['ASSET_ID_FORMAT_GS1_URI'];
 
@@ -41,6 +43,8 @@ function flattenLogRows(payload) {
 }
 
 const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
+  const { role } = useAuth();
+  const canManageTask = isAdminRole(role);
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -75,14 +79,18 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
       const data = await getTaskDetails(taskId);
       setDetails(data.task);
 
-      const sensorsData = await getSensors({ page: 0, size: 500, sort_order: 'SORT_ORDER_ASC' });
-      setAvailableSensors(sensorsData.sensors || []);
+      if (canManageTask) {
+        const sensorsData = await getSensors({ page: 0, size: 500, sort_order: 'SORT_ORDER_ASC' });
+        setAvailableSensors(sensorsData.sensors || []);
+      } else {
+        setAvailableSensors([]);
+      }
     } catch (err) {
       setLoadError(err.message);
     } finally {
       setLoadingDetails(false);
     }
-  }, [taskId]);
+  }, [taskId, canManageTask]);
 
   useEffect(() => {
     fetchDetails();
@@ -331,16 +339,18 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center">
-        <button
-          type="button"
-          onClick={handleStopTask}
-          disabled={loadingDetails}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 disabled:opacity-50"
-        >
-          <StopCircle size={20} /> Detener Tarea
-        </button>
-      </div>
+      {canManageTask && (
+        <div className="flex flex-wrap gap-4 items-center">
+          <button
+            type="button"
+            onClick={handleStopTask}
+            disabled={loadingDetails}
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 disabled:opacity-50"
+          >
+            <StopCircle size={20} /> Detener Tarea
+          </button>
+        </div>
+      )}
 
       <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
         <h4 className="font-semibold text-gray-800 flex items-center gap-2">
@@ -490,57 +500,61 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
         )}
       </div>
 
-      <form onSubmit={handleAddAsset} className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
-        <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-          <Package size={18} /> Añadir activo a la tarea
-        </h4>
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <label className="flex-1 text-sm">
-            <span className="block text-gray-600 mb-1">Identificador del activo</span>
-            <input
-              value={assetValue}
-              onChange={(e) => setAssetValue(e.target.value)}
-              className="border rounded px-3 py-2 w-full"
-              placeholder="Ej. cadena GS1 / URI según tu modelo"
-            />
-          </label>
-          <label className="text-sm w-full md:w-56">
-            <span className="block text-gray-600 mb-1">id_format</span>
-            <select value={assetFormat} onChange={(e) => setAssetFormat(e.target.value)} className="border rounded px-2 py-2 w-full">
-              {ASSET_FORMAT_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </label>
+      {canManageTask && (
+        <form onSubmit={handleAddAsset} className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+            <Package size={18} /> Añadir activo a la tarea
+          </h4>
+          <div className="flex flex-col md:flex-row gap-3 md:items-end">
+            <label className="flex-1 text-sm">
+              <span className="block text-gray-600 mb-1">Identificador del activo</span>
+              <input
+                value={assetValue}
+                onChange={(e) => setAssetValue(e.target.value)}
+                className="border rounded px-3 py-2 w-full"
+                placeholder="Ej. cadena GS1 / URI según tu modelo"
+              />
+            </label>
+            <label className="text-sm w-full md:w-56">
+              <span className="block text-gray-600 mb-1">id_format</span>
+              <select value={assetFormat} onChange={(e) => setAssetFormat(e.target.value)} className="border rounded px-2 py-2 w-full">
+                {ASSET_FORMAT_OPTIONS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={loadingAsset}
+              className="bg-indigo-600 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded disabled:opacity-50"
+            >
+              Añadir activo
+            </button>
+          </div>
+        </form>
+      )}
+
+      {canManageTask && (
+        <form onSubmit={handleAssociateSensor} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <select value={selectedSensor} onChange={(e) => setSelectedSensor(e.target.value)} className="shadow border rounded w-full py-2 px-3 flex-1">
+            <option value="">Selecciona un sensor disponible</option>
+            {availableSensors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.serial_number})
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
-            disabled={loadingAsset}
-            className="bg-indigo-600 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded disabled:opacity-50"
+            disabled={loadingDetails}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            Añadir activo
+            <Plus size={20} /> Asociar sensor
           </button>
-        </div>
-      </form>
-
-      <form onSubmit={handleAssociateSensor} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <select value={selectedSensor} onChange={(e) => setSelectedSensor(e.target.value)} className="shadow border rounded w-full py-2 px-3 flex-1">
-          <option value="">Selecciona un sensor disponible</option>
-          {availableSensors.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.serial_number})
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          disabled={loadingDetails}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          <Plus size={20} /> Asociar sensor
-        </button>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

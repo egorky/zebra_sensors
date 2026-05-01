@@ -1,48 +1,78 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import { normalizeRole, isAdminRole } from '../constants/authRoles';
+import { getAppUsersFromEnv } from '../auth/appUsersFromEnv';
 
 const AuthContext = createContext(null);
 
+const AUTH_KEY = 'auth';
+const SESSION_MS = 3600 * 1000;
+
+function readStoredAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const now = Date.now();
+    if (!data.timestamp || now - data.timestamp >= SESSION_MS) {
+      localStorage.removeItem(AUTH_KEY);
+      return null;
+    }
+    const role = normalizeRole(data.role || 'admin');
+    return { role, username: data.username || '' };
+  } catch {
+    localStorage.removeItem(AUTH_KEY);
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [role, setRole] = useState(() => normalizeRole('admin'));
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
-    const authData = localStorage.getItem('auth');
-    if (authData) {
-      const { timestamp } = JSON.parse(authData);
-      const now = new Date().getTime();
-      // Check if it's been more than 1 hour (3600 * 1000 milliseconds)
-      if (now - timestamp < 3600 * 1000) {
-        setIsAuthenticated(true);
-      } else {
-        localStorage.removeItem('auth');
-        setIsAuthenticated(false);
-      }
+    const stored = readStoredAuth();
+    if (stored) {
+      setIsAuthenticated(true);
+      setRole(stored.role);
+      setUsername(stored.username);
+    } else {
+      setIsAuthenticated(false);
+      setRole(normalizeRole('admin'));
+      setUsername('');
     }
   }, []);
 
-  const login = (username, password) => {
-    const appUsername = import.meta.env.VITE_APP_USERNAME;
-    const appPassword = import.meta.env.VITE_APP_PASSWORD;
+  const isAdmin = useMemo(() => isAdminRole(role), [role]);
 
-    if (username === appUsername && password === appPassword) {
-      const authData = {
-        isAuthenticated: true,
-        timestamp: new Date().getTime(),
-      };
-      localStorage.setItem('auth', JSON.stringify(authData));
-      setIsAuthenticated(true);
-      return true;
+  const login = (user, password) => {
+    const users = getAppUsersFromEnv();
+    const match = users.find((u) => u.username === user && u.password === password);
+    if (!match) {
+      return false;
     }
-    return false;
+    const authData = {
+      isAuthenticated: true,
+      timestamp: Date.now(),
+      role: match.role,
+      username: match.username,
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(authData));
+    setIsAuthenticated(true);
+    setRole(match.role);
+    setUsername(match.username);
+    return true;
   };
 
   const logout = () => {
-    localStorage.removeItem('auth');
+    localStorage.removeItem(AUTH_KEY);
     setIsAuthenticated(false);
+    setRole(normalizeRole('admin'));
+    setUsername('');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, role, username, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

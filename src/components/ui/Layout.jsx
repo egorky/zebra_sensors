@@ -7,7 +7,7 @@ import { getConfig, CONFIG_UPDATED_EVENT } from '../../services/api';
 const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, isAdmin, username, role } = useAuth();
   const [logoDataUrl, setLogoDataUrl] = useState(() => getConfig().logoDataUrl || '');
 
   useEffect(() => {
@@ -17,13 +17,14 @@ const Layout = ({ children }) => {
     return () => window.removeEventListener(CONFIG_UPDATED_EVENT, syncLogo);
   }, []);
 
-  const navItems = [
+  const allNavItems = [
     { path: '/', icon: Home, label: 'Inicio', description: 'Página principal' },
-    { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL' },
+    { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL', adminOnly: true },
     { path: '/sensors', icon: Radio, label: 'Sensores', description: 'Gestionar sensores' },
     { path: '/tasks', icon: ClipboardList, label: 'Tareas', description: 'Gestionar tareas' },
     { path: '/ayuda', icon: HelpCircle, label: 'Ayuda', description: 'Guía de uso' },
   ];
+  const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin);
 
   const isActive = (path) => location.pathname === path;
 
@@ -73,6 +74,12 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* Logout Button */}
+        {isAuthenticated && (
+          <div className="px-6 pb-2 text-xs text-gray-500">
+            {username ? <span className="font-medium text-gray-700">{username} · </span> : null}
+            <span>{role === 'operator' ? 'Operador' : 'Administrador'}</span>
+          </div>
+        )}
         {isAuthenticated && (
           <div className="px-6 py-4">
             <button

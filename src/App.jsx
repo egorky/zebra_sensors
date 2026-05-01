@@ -10,6 +10,7 @@ import Help from './components/ui/Help';
 import Login from './components/auth/Login';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 
 // This component will be the parent of all protected routes
 const ProtectedLayout = () => (
@@ -51,7 +52,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/config" element={<Configuration />} />
+            <Route
+              path="/config"
+              element={
+                <AdminRoute>
+                  <Configuration />
+                </AdminRoute>
+              }
+            />
             <Route path="/sensors" element={<Sensors />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/ayuda" element={<Help />} />

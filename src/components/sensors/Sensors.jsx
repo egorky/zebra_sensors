@@ -8,8 +8,13 @@ import {
   SENSOR_DEVICE_STATUSES,
   SENSOR_TASK_STATUSES,
 } from '../../constants/zebraFilters';
+import { useAuth } from '../../context/AuthContext';
+import { isAdminRole } from '../../constants/authRoles';
 
 const Sensors = () => {
+  const { role } = useAuth();
+  const canManageSensors = isAdminRole(role);
+  const tableCols = canManageSensors ? 8 : 7;
   const [sensors, setSensors] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
   const [page, setPage] = useState(0);
@@ -160,27 +165,29 @@ const Sensors = () => {
     <div>
       <h1 className="text-3xl font-bold mb-6">Gestión de Sensores</h1>
 
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-xl font-bold mb-4">Enrolar Nuevo Sensor</h2>
-        <form onSubmit={handleEnroll} className="flex items-center gap-4">
-          <input
-            type="text"
-            value={serialNumber}
-            onChange={(e) => setSerialNumber(e.target.value)}
-            placeholder="Número de serie del sensor"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 disabled:bg-blue-300"
-            disabled={loading}
-          >
-            <PlusCircle size={20} />
-            Enrolar
-          </button>
-        </form>
-      </div>
+      {canManageSensors && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-xl font-bold mb-4">Enrolar Nuevo Sensor</h2>
+          <form onSubmit={handleEnroll} className="flex items-center gap-4">
+            <input
+              type="text"
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              placeholder="Número de serie del sensor"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 disabled:bg-blue-300"
+              disabled={loading}
+            >
+              <PlusCircle size={20} />
+              Enrolar
+            </button>
+          </form>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 flex items-center gap-2" role="alert">
@@ -377,13 +384,13 @@ const Sensors = () => {
                 <th className="py-2 px-4 border-b text-left">Estado</th>
                 <th className="py-2 px-4 border-b text-left">Última temp.</th>
                 <th className="py-2 px-4 border-b text-left">Batería</th>
-                <th className="py-2 px-4 border-b text-left">Acciones</th>
+                {canManageSensors && <th className="py-2 px-4 border-b text-left">Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {!loading && sensors.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-4 px-4 text-center text-gray-500">
+                  <td colSpan={tableCols} className="py-4 px-4 text-center text-gray-500">
                     No se encontraron sensores.
                   </td>
                 </tr>
@@ -400,22 +407,24 @@ const Sensors = () => {
                       <td className="py-2 px-4 border-b">{sensor.status}</td>
                       <td className="py-2 px-4 border-b">{formatZebraTemperature(sensor.unverified?.last_temperature)}</td>
                       <td className="py-2 px-4 border-b">{sensor.battery_level}%</td>
-                      <td className="py-2 px-4 border-b">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUnenroll(sensor.serial_number);
-                          }}
-                          className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm disabled:bg-red-300"
-                          disabled={loading}
-                        >
-                          Desenrolar
-                        </button>
-                      </td>
+                      {canManageSensors && (
+                        <td className="py-2 px-4 border-b">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnenroll(sensor.serial_number);
+                            }}
+                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm disabled:bg-red-300"
+                            disabled={loading}
+                          >
+                            Desenrolar
+                          </button>
+                        </td>
+                      )}
                     </tr>
                     {selectedSensorId === sensor.id && (
                       <tr>
-                        <td colSpan="8" className="p-4 bg-gray-50 border-b">
+                        <td colSpan={tableCols} className="p-4 bg-gray-50 border-b">
                           <SensorDetails sensor={sensor} />
                         </td>
                       </tr>

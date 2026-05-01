@@ -4,8 +4,12 @@ import { PlusCircle, RefreshCw, AlertTriangle, ChevronRight, ChevronDown, Chevro
 import CreateTaskModal from './CreateTaskModal';
 import TaskDetails from './TaskDetails';
 import { TASK_SORT_FIELDS, TASK_STATUSES } from '../../constants/zebraFilters';
+import { useAuth } from '../../context/AuthContext';
+import { isAdminRole } from '../../constants/authRoles';
 
 const Tasks = () => {
+  const { role } = useAuth();
+  const canManageTasks = isAdminRole(role);
   const [tasks, setTasks] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
   const [page, setPage] = useState(0);
@@ -167,13 +171,15 @@ const Tasks = () => {
               <option value={50}>50 / página</option>
               <option value={100}>100 / página</option>
             </select>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 text-sm"
-            >
-              <PlusCircle size={18} />
-              Crear Tarea
-            </button>
+            {canManageTasks && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2 text-sm"
+              >
+                <PlusCircle size={18} />
+                Crear Tarea
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setAdvOpen((o) => !o)}
@@ -331,7 +337,7 @@ const Tasks = () => {
         </div>
       </div>
 
-      {isModalOpen && (
+      {isModalOpen && canManageTasks && (
         <CreateTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={handleTaskCreated} />
       )}
     </div>
