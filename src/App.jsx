@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/ui/Layout';
+import { getConfig, CONFIG_UPDATED_EVENT } from './services/api';
 import Home from './components/ui/Home';
 import Configuration from './components/config/Configuration';
 import Sensors from './components/sensors/Sensors';
@@ -18,7 +19,30 @@ const ProtectedLayout = () => (
   </ProtectedRoute>
 );
 
+function applyFaviconFromConfig() {
+  const { faviconDataUrl } = getConfig();
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  if (faviconDataUrl) {
+    link.href = faviconDataUrl;
+    link.removeAttribute('type');
+  } else {
+    link.href = '/vite.svg';
+    link.type = 'image/svg+xml';
+  }
+}
+
 function App() {
+  useEffect(() => {
+    applyFaviconFromConfig();
+    window.addEventListener(CONFIG_UPDATED_EVENT, applyFaviconFromConfig);
+    return () => window.removeEventListener(CONFIG_UPDATED_EVENT, applyFaviconFromConfig);
+  }, []);
+
   return (
     <AuthProvider>
       <Router>

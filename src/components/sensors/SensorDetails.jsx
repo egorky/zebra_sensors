@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatZebraTemperature } from '../../utils/zebraReadings';
 
 const DetailItem = ({ label, value }) => {
   if (value === null || value === undefined || value === '') {
@@ -46,7 +47,7 @@ const SensorDetails = ({ sensor }) => {
            <>
             <h4 className="col-span-full font-semibold mt-2">Datos no Verificados</h4>
             <DetailItem label="Última Fecha" value={sensor.unverified.last_date_time ? new Date(sensor.unverified.last_date_time).toLocaleString() : 'N/A'} />
-            <DetailItem label="Última Temperatura" value={sensor.unverified.last_temperature} />
+            <DetailItem label="Última Temperatura" value={formatZebraTemperature(sensor.unverified.last_temperature)} />
             <DetailItem label="Última Alarma" value={String(sensor.unverified.last_alarm)} />
           </>
         )}

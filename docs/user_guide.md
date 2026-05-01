@@ -1,47 +1,53 @@
-# Guía de Usuario
-
-Esta guía describe cómo utilizar las diferentes funcionalidades de la aplicación Zebra Sensor Manager.
+# Guía de usuario — Zebra Sensor Manager
 
 ## 1. Autenticación
 
-### Página de Login
-Al acceder a la aplicación, se te presentará una página de login.
+### Inicio de sesión
 
--   **Campo "Username"**: Introduce el nombre de usuario configurado en el archivo `.env`.
--   **Campo "Password"**: Introduce la contraseña configurada en el archivo `.env`.
--   **Botón "Sign in"**: Haz clic para iniciar sesión. Si las credenciales son correctas, serás redirigido a la página de inicio. La sesión se mantendrá activa durante una hora.
+Al abrir la aplicación verás la pantalla de login.
 
-### Cerrar Sesión
--   **Botón "Cerrar Sesión"**: Este botón se encuentra en la parte inferior del menú de navegación lateral. Haz clic en él para cerrar la sesión actual y volver a la página de login.
+- **Usuario** y **contraseña** deben coincidir con `VITE_APP_USERNAME` y `VITE_APP_PASSWORD` del archivo `.env` con el que se compiló o sirve la app.
+- Tras un inicio correcto accedes al panel principal.
 
-## 2. Página de Configuración
+### Cerrar sesión
 
-Esta página te permite gestionar la configuración de la API de Zebra.
+En la parte inferior del menú lateral, **Cerrar sesión** te devuelve a la pantalla de login.
 
--   **Campo "Base URL"**: Muestra la URL base de la API que se está utilizando. Puedes editarla para apuntar a un servidor diferente.
--   **Campo "API Key"**: Muestra la clave de API utilizada para la autenticación. Puedes cambiarla si tu clave ha sido actualizada.
--   **Botón "Guardar Configuración"**: Guarda los valores de "Base URL" y "API Key" en el almacenamiento local de tu navegador. Estos valores tendrán prioridad sobre los del archivo `.env`.
--   **Botón "Limpiar Configuración Guardada"**: Elimina la configuración guardada en el navegador. La próxima vez que recargues la página, la aplicación utilizará los valores del archivo `.env`.
+## 2. Inicio
 
-## 3. Página de Sensores
+La página principal incluye un apartado sobre **webhooks frente a polling**, con enlaces a la documentación Zebra y a [docs/webhooks.md](webhooks.md).
 
-Aquí puedes gestionar los sensores asociados a tu cuenta de Zebra.
+## 3. Configuración
 
--   **Botón "Refrescar"**: Vuelve a cargar la lista de sensores desde la API de Zebra. Úsalo para ver los cambios más recientes.
--   **Campo "Enrolar Nuevo Sensor"**: Introduce el número de serie de un nuevo sensor que desees registrar.
--   **Botón "Enrolar"**: Registra el sensor con el número de serie introducido. El nuevo sensor aparecerá en la lista.
--   **Botón "Desenrolar"**: Este botón aparece junto a cada sensor en la lista. Haz clic en él para eliminar el registro de ese sensor.
+- Los valores por defecto de **Base URL** y **API Key** vienen del `.env` (`VITE_API_*`). Opcionalmente puedes guardar otros valores en el navegador desde esta pantalla.
+- **Logo** y **Favicon** (opcional) — archivos locales guardados solo en este navegador.
+- **Guardar configuración** / **Limpiar configuración guardada**.
 
-## 4. Página de Tareas
+Más detalle en [api_configuration.md](api_configuration.md).
 
-Esta página te permite gestionar las tareas de monitoreo de los sensores.
+## 4. Sensores
 
--   **Botón "Crear Tarea"**: Abre un formulario para crear una nueva tarea de monitoreo. Deberás rellenar detalles como el nombre de la tarea, los intervalos de lectura, los umbrales de temperatura, etc.
+- **Buscar** — filtra por texto (`text_filter`: nombre, MAC o número de serie).
+- **Filtros avanzados** — panel opcional: `task_id`, estados del sensor (`statuses`), estados sensor-en-tarea (`sensor_task_statuses`, útiles junto con `task_id`), fechas `enrolled_after` / `enrolled_before`, exclusión de batería baja, y campo de orden (véase `src/constants/zebraFilters.js` para valores típicos).
+- **Paginación** — tamaño de página y botones anterior/siguiente; se muestra el total según la API.
+- **Última temperatura** — si aparece como no válida (~327,67 °C), el sensor puede estar saliendo de reposo; es el comportamiento descrito por Zebra.
+- **Refrescar**, **Enrolar**, **Desenrolar** como antes.
 
-### Detalles de una Tarea
-Al hacer clic en una tarea de la lista, se expandirá para mostrar más detalles y acciones.
+## 5. Tareas
 
--   **Desplegable "Asociar Sensor"**: Muestra una lista de los sensores disponibles que no están actualmente asignados a ninguna tarea. Selecciona un sensor de la lista.
--   **Botón "Asociar Sensor"**: Asocia el sensor seleccionado a la tarea.
--   **Botón "Detener Tarea"**: Detiene la tarea de monitoreo. La tarea dejará de recopilar datos.
--   **Botón "Extraer Datos"**: Solicita y muestra los datos de log recopilados por la tarea en formato JSON. Los datos aparecerán en un área de texto debajo de los detalles de la tarea.
+- **Buscar** y **paginación** en la lista de tareas.
+- **Filtros avanzados** — `updated_from` / `updated_to`, `sensor_mac_address`, y uno o varios `statuses` de tarea (valores en `src/constants/zebraFilters.js`).
+- Al expandir una tarea:
+  - **Log de datos** — primera página con límite configurable; **Cargar más** usa el `cursor` devuelto por la API; filtros opcionales de tiempo y sensor; tabla resumida y JSON de la última página.
+  - **Alarmas** — páginas con **Cargar página 1** y **Siguiente página**; tabla con temperaturas formateadas.
+  - **Añadir activo** — cuerpo según API (`asset`, `id_format`).
+  - **Asociar sensor**, **Detener tarea**.
+
+## 6. Ejecución
+
+- Desarrollo: `npm run dev`.
+- Producción: `npm run build` y `npm start`; opcionalmente **PM2** — véase el [README](../README.md).
+
+## 7. Documentación Zebra
+
+[reference_zebra_apis.md](reference_zebra_apis.md) y enlaces oficiales allí listados.

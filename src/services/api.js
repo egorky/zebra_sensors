@@ -1,12 +1,56 @@
 const API_CONFIG_KEY = 'zebraApiConfig';
 
+/** Dispatched when saved API/branding settings change so Layout and favicon update. */
+export const CONFIG_UPDATED_EVENT = 'zebra-sensor-manager-config-updated';
+
+export const notifyConfigUpdated = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CONFIG_UPDATED_EVENT));
+  }
+};
+
+const defaultConfigFromEnv = () => ({
+  baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+  apikey: import.meta.env.VITE_API_KEY || '',
+  logoDataUrl: '',
+  faviconDataUrl: '',
+});
+
+function appendQueryParams(searchParams, key, value) {
+  if (value === undefined || value === null || value === '') return;
+  if (Array.isArray(value)) {
+    value.forEach((v) => searchParams.append(key, String(v)));
+  } else {
+    searchParams.set(key, String(value));
+  }
+}
+
+function buildQuery(obj) {
+  const sp = new URLSearchParams();
+  Object.entries(obj).forEach(([k, v]) => appendQueryParams(sp, k, v));
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
 // --- Configuration Management ---
 export const saveConfig = (config) => {
   try {
     localStorage.setItem(API_CONFIG_KEY, JSON.stringify(config));
+    notifyConfigUpdated();
     return true;
   } catch (error) {
     console.error('Error saving config to localStorage:', error);
+    return false;
+  }
+};
+
+export const clearSavedConfig = () => {
+  try {
+    localStorage.removeItem(API_CONFIG_KEY);
+    notifyConfigUpdated();
+    return true;
+  } catch (error) {
+    console.error('Error clearing config:', error);
     return false;
   }
 };
@@ -15,18 +59,18 @@ export const getConfig = () => {
   try {
     const config = localStorage.getItem(API_CONFIG_KEY);
     if (config) {
-      return JSON.parse(config);
+      const parsed = JSON.parse(config);
+      return {
+        ...defaultConfigFromEnv(),
+        ...parsed,
+        logoDataUrl: parsed.logoDataUrl || '',
+        faviconDataUrl: parsed.faviconDataUrl || '',
+      };
     }
-    return {
-      baseUrl: import.meta.env.VITE_API_BASE_URL || '',
-      apikey: import.meta.env.VITE_API_KEY || '',
-    };
+    return defaultConfigFromEnv();
   } catch (error) {
     console.error('Error getting config from localStorage:', error);
-    return {
-      baseUrl: '',
-      apikey: '',
-    };
+    return defaultConfigFromEnv();
   }
 };
 
@@ -41,8 +85,8 @@ export const makeApiCall = async (endpoint, options = {}) => {
   const url = `${baseUrl}${endpoint}`;
 
   const headers = {
-    'Accept': 'application/json',
-    'apikey': apikey,
+    Accept: 'application/json',
+    apikey: apikey,
     ...options.headers,
   };
 
@@ -61,12 +105,10 @@ export const makeApiCall = async (endpoint, options = {}) => {
     let errorData;
     let errorText = response.statusText;
     try {
-      // Try to clone the response so we can read it as text and as json
       const clonedResponse = response.clone();
       errorText = await clonedResponse.text();
       errorData = JSON.parse(errorText);
     } catch (e) {
-      // If parsing as JSON fails, we'll just use the text content
       errorData = { message: errorText };
     }
 
@@ -74,13 +116,12 @@ export const makeApiCall = async (endpoint, options = {}) => {
       url: url,
       requestOptions: config,
       responseStatus: response.status,
-      responseBody: errorText, // Log the raw text response
+      responseBody: errorText,
     });
 
     throw new Error(`API call failed with status ${response.status}: ${errorData.message || 'Unknown error'}`);
   }
 
-  // For DELETE requests, a 200 OK with no body is common.
   if (response.status === 200 && options.method === 'DELETE') {
     return { success: true };
   }
@@ -88,10 +129,37 @@ export const makeApiCall = async (endpoint, options = {}) => {
   return response.json();
 };
 
-
 // --- Sensor Management ---
-export const getSensors = () => {
-  return makeApiCall('/devices/environmental-sensors?size=100');
+export const getSensors = (opts = {}) => {
+  const {
+    page = 0,
+    size = 25,
+    text_filter,
+    task_id,
+    sort_field = 'SORT_FIELD_NAME',
+    sort_order = 'SORT_ORDER_ASC',
+    statuses,
+    exclude_low_battery,
+    enrolled_after,
+    enrolled_before,
+    sensor_task_statuses,
+  } = opts;
+
+  const q = buildQuery({
+    page,
+    size,
+    sort_field,
+    sort_order,
+    text_filter,
+    task_id,
+    exclude_low_battery,
+    enrolled_after,
+    enrolled_before,
+    statuses,
+    sensor_task_statuses,
+  });
+
+  return makeApiCall(`/devices/environmental-sensors${q}`);
 };
 
 export const enrollSensor = (serialNumber) => {
@@ -108,8 +176,32 @@ export const unenrollSensor = (serialNumber) => {
 };
 
 // --- Task Management ---
-export const getTasks = () => {
-  return makeApiCall('/environmental/tasks?size=100');
+export const getTasks = (opts = {}) => {
+  const {
+    page = 0,
+    size = 25,
+    text_filter,
+    sort_field = 'SORT_FIELD_NAME',
+    sort_order = 'SORT_ORDER_ASC',
+    updated_from,
+    updated_to,
+    statuses,
+    sensor_mac_address,
+  } = opts;
+
+  const q = buildQuery({
+    page,
+    size,
+    sort_field,
+    sort_order,
+    text_filter,
+    updated_from,
+    updated_to,
+    statuses,
+    sensor_mac_address,
+  });
+
+  return makeApiCall(`/environmental/tasks${q}`);
 };
 
 export const createTask = (taskDetails) => {
@@ -141,20 +233,34 @@ export const associateSensorToTask = (taskId, sensorId) => {
   });
 };
 
-export const addTaskAsset = (taskId, asset) => {
-  // Assuming the asset is just a string for now.
-  // The API spec shows { "asset": "<string>", "id_format": "..." }
-  // We might need to adjust this later if id_format is required.
+export const addTaskAsset = (taskId, { asset, id_format }) => {
   return makeApiCall(`/environmental/tasks/${taskId}/assets`, {
     method: 'POST',
-    body: JSON.stringify({ asset: asset }),
+    body: JSON.stringify({ asset, id_format }),
   });
 };
 
-export const getTaskData = (taskId) => {
-  return makeApiCall(`/data/environmental/tasks/${taskId}/log?limit=500`);
+/**
+ * Página del log de datos de una tarea (cursor + limit).
+ * @see https://developer.zebra.com/apis/data-reporting-electronic-temperature-sensors
+ */
+export const getTaskLogPage = (taskId, opts = {}) => {
+  const { limit = 100, cursor, startTime, endTime, sensorTaskId, deviceId } = opts;
+  const q = buildQuery({
+    limit,
+    cursor,
+    startTime,
+    endTime,
+    sensorTaskId,
+    deviceId,
+  });
+  return makeApiCall(`/data/environmental/tasks/${taskId}/log${q}`);
 };
 
-export const getTaskAlarms = (taskId) => {
-  return makeApiCall(`/environmental/tasks/${taskId}/alarms?page.size=100`);
+export const getTaskAlarmsPage = (taskId, { page = 0, pageSize = 50, sort_order = 'SORT_ORDER_DESC' } = {}) => {
+  const sp = new URLSearchParams();
+  sp.set('page.page', String(page));
+  sp.set('page.size', String(pageSize));
+  sp.set('sort_order', sort_order);
+  return makeApiCall(`/environmental/tasks/${taskId}/alarms?${sp.toString()}`);
 };

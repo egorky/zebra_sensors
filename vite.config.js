@@ -16,9 +16,13 @@ export default defineConfig(({ mode }) => {
       host: env.HOST || 'localhost',
     },
     preview: {
-      host: '0.0.0.0',
-      port: 4173,
-      allowedHosts: ['telecomvas-bulk.ioos.app']
-    }
+      // Servidor de producción local / PM2 (`npm start`). Configurable con PREVIEW_HOST y PREVIEW_PORT en `.env`.
+      host: env.PREVIEW_HOST || '0.0.0.0',
+      port: Number(env.PREVIEW_PORT || 4173),
+      strictPort: true,
+      allowedHosts: env.PREVIEW_ALLOWED_HOSTS
+        ? env.PREVIEW_ALLOWED_HOSTS.split(',').map((h) => h.trim()).filter(Boolean)
+        : true,
+    },
   }
 })

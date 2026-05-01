@@ -1,104 +1,101 @@
 # Zebra Sensor Manager
 
-Este proyecto es una interfaz web diseñada para facilitar la gestión de sensores de la marca Zebra a través de su API. Permite a los usuarios, incluso sin experiencia técnica, configurar la conexión a la API, gestionar sensores (enrolar/desenrolar) y administrar tareas de monitoreo.
+Interfaz web para gestionar sensores electrónicos de temperatura **Zebra** mediante las APIs de Management y Data Reporting de Zebra Data Services: configuración de conexión, enrolado de sensores, creación y control de tareas de monitoreo, y consulta de logs y alarmas.
 
 ## Características
 
-- **Configuración Dinámica:** Define y actualiza la `baseUrl` y la `apikey` de la API directamente desde la interfaz web. La configuración se guarda localmente en el navegador para persistir entre sesiones.
-- **Gestión de Sensores:**
-  - Lista todos los sensores asociados a tu tenant.
-  - Enrola nuevos sensores utilizando su número de serie.
-  - Desenrola sensores existentes.
-- **Gestión de Tareas:**
-  - Lista todas las tareas de monitoreo.
-  - Crea nuevas tareas con parámetros detallados como intervalos, umbrales de temperatura y más.
-  - Asocia sensores disponibles a una tarea.
-  - Detiene tareas activas.
-  - Extrae y visualiza los datos de log de una tarea en formato JSON.
+- **Configuración:** Base URL y API key desde la interfaz (localStorage) o valores por defecto desde `.env`.
+- **Branding opcional:** Logo en la barra lateral y favicon cargados desde archivos locales (guardados en el navegador).
+- **Sensores:** Paginación, filtro de texto, orden, **filtros avanzados** (task_id, estados, fechas de enrolado, batería baja); enrolar / desenrolar; aviso de temperatura no válida (~327,67 °C).
+- **Tareas:** Paginación, filtro en lista, **filtros avanzados** (actualización, MAC de sensor, estados); detalle con **log por cursor**, **alarmas paginadas**, **añadir activo**, asociar sensores y detener tarea.
+- **Webhooks:** resumen en la página de inicio y en `docs/webhooks.md` (esta SPA solo usa polling).
 
-## Requisitos Previos
+## Requisitos
 
-Asegúrate de tener instalado [Node.js](https://nodejs.org/) (versión 16 o superior) y un gestor de paquetes como `npm` o `yarn`.
+- [Node.js](https://nodejs.org/) 18+ recomendado (16+ suele funcionar).
+- npm (o yarn/pnpm).
 
 ## Instalación
 
-1.  Clona este repositorio en tu máquina local.
-2.  Navega al directorio del proyecto:
-    ```bash
-    cd zebra-sensor-manager
-    ```
-3.  Instala las dependencias del proyecto:
-    ```bash
-    npm install
-    ```
-    o si usas `yarn`:
-    ```bash
-    yarn install
-    ```
-
-## Configuración
-
-La aplicación se puede configurar de dos maneras:
-
-### 1. Archivo `.env` (Configuración Inicial)
-
-Puedes proporcionar valores por defecto para la `baseUrl`, la `apikey` y la configuración del servidor de desarrollo creando un archivo `.env` en la raíz del proyecto.
-
-1.  Crea una copia del archivo de ejemplo:
-    ```bash
-    cp .env.example .env
-    ```
-2.  Edita el archivo `.env` con tus credenciales y configuración deseada:
-    ```
-    # --- Configuración del Servidor de Desarrollo ---
-    # Puerto para el servidor (por defecto: 5173)
-    PORT=5173
-    # Host para el servidor. Usa '0.0.0.0' para exponer en la red local.
-    HOST=localhost
-
-    # --- Configuración de la API de Zebra ---
-    VITE_API_BASE_URL=https://api.zebra.com/v2
-    VITE_API_KEY=tu_api_key_aqui
-    ```
-
-### 2. Interfaz Web (Recomendado para el uso diario)
-
-La forma más sencilla de configurar la aplicación es a través de la propia interfaz web.
-
-1.  Ve a la sección **Configuración** en el menú lateral.
-2.  Introduce tu **Base URL** y **API Key**.
-3.  Haz clic en **Guardar Configuración**.
-
-Estos valores se guardarán en el almacenamiento local de tu navegador y tendrán prioridad sobre los valores del archivo `.env`.
-
-## Ejecución de la Aplicación
-
-Para iniciar el servidor de desarrollo, ejecuta:
 ```bash
-npm run dev
+git clone <tu-repo>
+cd zebra_sensors
+npm install
 ```
-La aplicación estará disponible en `http://localhost:5173` (o el puerto que se indique en la consola).
 
-## Cómo Usar la Aplicación
+Copia variables de entorno de ejemplo:
 
-### Gestión de Sensores
+```bash
+cp .env.example .env
+```
 
-1.  Navega a la sección **Sensores**.
-2.  **Para ver los sensores:** La lista de sensores enrolados se carga automáticamente. Puedes hacer clic en **Refrescar** para obtener la lista más reciente.
-3.  **Para enrolar un sensor:** Introduce el número de serie en el campo "Enrolar Nuevo Sensor" y haz clic en **Enrolar**.
-4.  **Para desenrolar un sensor:** Encuentra el sensor en la lista y haz clic en el botón **Desenrolar**.
+Edita `.env` con tus valores (API, login de la app, puertos si los necesitas).
 
-### Gestión de Tareas
+## Scripts npm
 
-1.  Navega a la sección **Tareas**.
-2.  **Para crear una tarea:**
-    - Haz clic en **Crear Tarea**.
-    - Rellena el formulario con los detalles de la tarea (nombre, intervalos, umbrales, etc.).
-    - Haz clic en **Crear Tarea** dentro del modal.
-3.  **Para ver los detalles de una tarea:** Haz clic en una tarea de la lista. Se desplegará una sección con los detalles y acciones disponibles.
-4.  **Para asociar un sensor a una tarea:**
-    - Despliega los detalles de la tarea.
-    - Selecciona un sensor disponible en el menú desplegable.
-    - Haz clic en **Asociar Sensor**.
-5.  **Para detener una tarea:** Haz clic en el botón **Detener Tarea** en los detalles de la tarea.
-6.  **Para extraer datos de una tarea:** Haz clic en **Extraer Datos**. Los datos del log se mostrarán en formato JSON en la parte inferior de los detalles de la tarea.
+| Comando | Uso |
+|--------|-----|
+| `npm run dev` | Servidor de desarrollo Vite (hot reload). |
+| `npm run build` | Genera la carpeta `dist/` para producción. |
+| `npm start` | Sirve `dist/` con **Vite preview** (modo producción local o proceso gestionado por PM2). |
+| `npm run preview` | Equivalente a `npm start`. |
+
+**Importante:** antes de `npm start` debes ejecutar al menos una vez `npm run build`.
+
+### Producción y PM2
+
+El servidor de preview escucha por defecto en `0.0.0.0:4173`. Puedes cambiar host y puerto con variables en `.env`:
+
+- `PREVIEW_HOST` (por defecto `0.0.0.0`)
+- `PREVIEW_PORT` (por defecto `4173`)
+- `PREVIEW_ALLOWED_HOSTS` — lista separada por comas si necesitas restringir el cabecero `Host` (opcional)
+
+Ejemplo de arranque con PM2 desde la raíz del proyecto:
+
+```bash
+npm run build
+pm2 start npm --name zebra-sensor-manager -- start
+```
+
+Para ver logs y estado: `pm2 logs zebra-sensor-manager`, `pm2 status`.
+
+Tras un despliegue nuevo:
+
+```bash
+npm run build && pm2 restart zebra-sensor-manager
+```
+
+## Configuración de la API Zebra
+
+1. Obtén una **application key** en el [portal de desarrolladores Zebra](https://developer.zebra.com/user/apps).
+2. En la app, menú **Configuración**, introduce la **Base URL** (p. ej. `https://api.zebra.com/v2` según tu entorno) y la **API Key**.
+3. Opcional: sube **logo** y **favicon** (archivos locales; máximo recomendado 400 KB cada uno).
+4. **Guardar configuración**. También puedes **Limpiar configuración guardada** para volver a los valores del `.env`.
+
+Documentación ampliada: [docs/api_configuration.md](docs/api_configuration.md), [docs/user_guide.md](docs/user_guide.md).
+
+## Uso rápido
+
+- **Login:** credenciales definidas en `.env` (`VITE_APP_USERNAME`, `VITE_APP_PASSWORD`).
+- **Sensores:** refrescar lista, enrolar por número de serie, desenrolar.
+- **Tareas:** crear desde el modal, expandir una tarea para asociar sensores, detener, **Extraer datos** / **Extraer alarmas**.
+
+## Alineación con las APIs y documentación Zebra
+
+Las APIs públicas descritas en el portal cubren gestión (enrolado, tareas, sensores en tarea, stop) y reporting de datos (log de tarea). Esta aplicación implementa esos flujos principales en la UI; detalles, límites y endpoints adicionales están en:
+
+- [docs/reference_zebra_apis.md](docs/reference_zebra_apis.md)
+- [Data Reporting — Electronic Temperature Sensors](https://developer.zebra.com/apis/data-reporting-electronic-temperature-sensors)
+- [Management — Electronic Temperature Sensors](https://developer.zebra.com/apis/management-electronic-temperature-sensors)
+- [Manual PDF P1131383-02EN](https://www.zebra.com/content/dam/support-dam/en/documentation/unrestricted/guide/product/P1131383-02EN-mangagement-data-electronic-temp-dg-en.pdf)
+
+El repositorio incluye además `Zebra Copy.postman_collection.json` como referencia de peticiones.
+
+## Estructura del repositorio
+
+- **`src/`** — aplicación principal (React + Vite).
+- **`docs/`** — guías, referencia de APIs y [docs/webhooks.md](docs/webhooks.md).
+
+## Licencia
+
+Véase el archivo [LICENSE](LICENSE) del repositorio.

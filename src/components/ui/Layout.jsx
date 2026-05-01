@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Settings, Radio, ClipboardList, Home, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getConfig, CONFIG_UPDATED_EVENT } from '../../services/api';
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
+  const [logoDataUrl, setLogoDataUrl] = useState(() => getConfig().logoDataUrl || '');
+
+  useEffect(() => {
+    const syncLogo = () => setLogoDataUrl(getConfig().logoDataUrl || '');
+    syncLogo();
+    window.addEventListener(CONFIG_UPDATED_EVENT, syncLogo);
+    return () => window.removeEventListener(CONFIG_UPDATED_EVENT, syncLogo);
+  }, []);
 
   const navItems = [
     { path: '/', icon: Home, label: 'Inicio', description: 'Página principal' },
@@ -23,11 +32,15 @@ const Layout = ({ children }) => {
       <aside className="w-72 bg-white border-r border-gray-200 py-6 shadow-sm flex flex-col">
         {/* Logo/Header */}
         <div className="px-6 mb-8">
-          <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-            <Radio size={28} />
-            Zebra Sensor Manager
+          <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-3">
+            {logoDataUrl ? (
+              <img src={logoDataUrl} alt="" className="max-h-10 max-w-[200px] object-contain" />
+            ) : (
+              <Radio size={28} aria-hidden />
+            )}
+            <span>Zebra Sensor Manager</span>
           </h1>
-          <p className="text-sm text-gray-500 ml-9">
+          <p className={`text-sm text-gray-500 ${logoDataUrl ? '' : 'ml-9'}`}>
             Gestor de Sensores Zebra
           </p>
         </div>
