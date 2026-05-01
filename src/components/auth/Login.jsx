@@ -1,21 +1,29 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isBackendConfigured } from '../../services/backendApi';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (login(username, password)) {
-      navigate('/');
-    } else {
-      setError('Invalid username or password');
+    setBusy(true);
+    try {
+      const ok = await login(username, password);
+      if (ok) {
+        navigate('/');
+      } else {
+        setError('Usuario o contraseña incorrectos');
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -23,6 +31,9 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center text-gray-900">Login</h2>
+        {isBackendConfigured() && (
+          <p className="text-xs text-center text-gray-500">Autenticación contra el servidor (SQLite).</p>
+        )}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label
@@ -62,9 +73,10 @@ const Login = () => {
           <div>
             <button
               type="submit"
-              className="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={busy}
+              className="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-60"
             >
-              Sign in
+              {busy ? 'Entrando…' : 'Entrar'}
             </button>
           </div>
         </form>

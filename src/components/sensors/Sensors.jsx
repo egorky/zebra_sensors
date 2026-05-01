@@ -10,6 +10,7 @@ import {
 } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminRole } from '../../constants/authRoles';
+import { isBackendConfigured, readBackendAuthFromStorage, syncSensorsToBackend } from '../../services/backendApi';
 
 const Sensors = () => {
   const { role } = useAuth();
@@ -75,8 +76,12 @@ const Sensors = () => {
         enrolled_before: filterEnrolledBefore.trim() || undefined,
         exclude_low_battery: filterExcludeLowBattery ? true : undefined,
       });
-      setSensors(data.sensors || []);
+      const list = data.sensors || [];
+      setSensors(list);
       setPageResponse(data.page_response || null);
+      if (isAdminRole(role) && isBackendConfigured() && readBackendAuthFromStorage()?.token && list.length) {
+        syncSensorsToBackend(list).catch(() => {});
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -95,6 +100,7 @@ const Sensors = () => {
     filterEnrolledAfter,
     filterEnrolledBefore,
     filterExcludeLowBattery,
+    role,
   ]);
 
   useEffect(() => {

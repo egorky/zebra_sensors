@@ -6,6 +6,7 @@ import TaskDetails from './TaskDetails';
 import { TASK_SORT_FIELDS, TASK_STATUSES } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminRole } from '../../constants/authRoles';
+import { isBackendConfigured, readBackendAuthFromStorage, syncTasksToBackend } from '../../services/backendApi';
 
 const Tasks = () => {
   const { role } = useAuth();
@@ -69,8 +70,12 @@ const Tasks = () => {
         statuses: filterTaskStatuses.length ? filterTaskStatuses : undefined,
         sensor_mac_address: filterSensorMac.trim() || undefined,
       });
-      setTasks(data.tasks || []);
+      const list = data.tasks || [];
+      setTasks(list);
       setPageResponse(data.page_response || null);
+      if (canManageTasks && isBackendConfigured() && readBackendAuthFromStorage()?.token && list.length) {
+        syncTasksToBackend(list).catch(() => {});
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,6 +92,7 @@ const Tasks = () => {
     filterUpdatedTo,
     filterTaskStatuses,
     filterSensorMac,
+    canManageTasks,
   ]);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import Configuration from './components/config/Configuration';
 import Sensors from './components/sensors/Sensors';
 import Tasks from './components/tasks/Tasks';
 import Help from './components/ui/Help';
+import Users from './components/users/Users';
 import Login from './components/auth/Login';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -57,6 +58,14 @@ function App() {
               element={
                 <AdminRoute>
                   <Configuration />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <AdminRoute>
+                  <Users />
                 </AdminRoute>
               }
             />

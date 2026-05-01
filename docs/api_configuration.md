@@ -36,6 +36,12 @@ Variables relacionadas con los servidores:
 
 **Nota:** Las variables `VITE_*` se inyectan en el cliente en tiempo de compilación. Si cambias `.env`, vuelve a ejecutar `npm run dev` o `npm run build` según el modo.
 
+### Backend opcional (login y SQLite)
+
+Si defines `VITE_BACKEND_URL` (por ejemplo `http://localhost:3001`) apuntando a la API en `server/`, el **inicio de sesión** de la aplicación web deja de usar `VITE_APP_USERNAME` / `VITE_APP_PASSWORD` y pasa a validar contra la base **SQLite** del servidor. La configuración de Zebra (Base URL, API key, branding) **sigue** siendo la de esta pantalla o del `.env` del front (`VITE_API_*`); el backend no sustituye esas credenciales de Zebra.
+
+Variables del servidor: copia `server/.env.example` a `server/.env` (`JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, etc.). Resumen en el [README](../README.md).
+
 ## Referencia de APIs Zebra
 
 Para ver cómo encajan estos ajustes con las APIs oficiales de sensores de temperatura, consulta [reference_zebra_apis.md](reference_zebra_apis.md). Sobre webhooks vs esta app (solo polling), véase [webhooks.md](webhooks.md).

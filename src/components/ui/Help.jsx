@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isBackendConfigured } from '../../services/backendApi';
 
 const Section = ({ id, title, children }) => (
   <section id={id} className="scroll-mt-8 border-b border-gray-200 pb-8 last:border-0 last:pb-0">
@@ -11,6 +12,7 @@ const Section = ({ id, title, children }) => (
 
 const Help = () => {
   const { isAdmin } = useAuth();
+  const backendOn = isBackendConfigured();
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Ayuda</h1>
@@ -34,6 +36,11 @@ const Help = () => {
       <nav className="mb-10 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
         <p className="font-semibold text-gray-800 mb-2">En esta página</p>
         <ul className="list-disc list-inside space-y-1 text-blue-700">
+          <li>
+            <a href="#almacenamiento" className="hover:underline">
+              Dónde se guarda la información
+            </a>
+          </li>
           <li>
             <a href="#acceso-usuarios" className="hover:underline">
               Acceso, usuarios y roles
@@ -113,27 +120,43 @@ const Help = () => {
       </nav>
 
       <div className="space-y-10">
-        <Section id="acceso-usuarios" title="Acceso, nuevos usuarios y roles">
-          <p>
-            <strong>Esta aplicación no usa base de datos propia</strong> para usuarios ni sesiones en servidor. El acceso es una capa ligera en el navegador: las credenciales válidas se definen en el <strong>entorno de compilación</strong> de la SPA (variables <code className="bg-gray-100 px-1 rounded text-sm">VITE_*</code>), se incluyen en el paquete que se sirve al cliente y se comprueban al iniciar sesión.
-          </p>
-          <p>
-            Para <strong>añadir o quitar personas con acceso</strong>, quien despliegue la app debe actualizar esas variables, <strong>volver a compilar</strong> (<code className="bg-gray-100 px-1 rounded text-sm">npm run build</code>) y publicar el nuevo <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>. No hay panel en la interfaz para crear usuarios: eso sería un proyecto aparte (backend con base de datos) si lo necesitáis en el futuro.
-          </p>
-          <p>
-            <strong>Dos formas de definir usuarios</strong> (si ambas existen, tiene prioridad la lista JSON si es válida y no vacía):
-          </p>
+        <Section id="almacenamiento" title="Dónde se guarda la información">
           <ul className="list-disc list-inside space-y-2">
             <li>
-              <strong>Lista</strong> — variable <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERS</code> con un <strong>JSON en una sola línea</strong>: array de objetos <code className="bg-gray-100 px-1 rounded text-sm">username</code>, <code className="bg-gray-100 px-1 rounded text-sm">password</code>, <code className="bg-gray-100 px-1 rounded text-sm">role</code> (<code className="bg-gray-100 px-1 rounded text-sm">admin</code> u <code className="bg-gray-100 px-1 rounded text-sm">operator</code>).
+              <strong>Datos en vivo de Zebra</strong> (listado de sensores, tareas, enrolados, logs, etc.): <strong>no se guardan en este proyecto</strong> salvo en memoria mientras usas la pantalla. Siempre se obtienen o envían mediante las APIs de Zebra Data Services.
             </li>
             <li>
-              <strong>Usuario único</strong> — <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_PASSWORD</code>; ese usuario se trata como <strong>administrador</strong>.
+              <strong>Navegador (localStorage)</strong>: la <strong>configuración de conexión</strong> a Zebra (Base URL, API key) y el <strong>branding</strong> (logo, favicon) si los guardas desde la interfaz. La <strong>sesión de login</strong> del front también va en <code className="bg-gray-100 px-1 rounded text-sm">localStorage</code> (token JWT si hay backend, o marca temporal si el login es solo con variables <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code>).
+            </li>
+            <li>
+              <strong>Servidor con SQLite</strong> (opcional): si defines <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> y arrancas la API en <code className="bg-gray-100 px-1 rounded text-sm">server/</code>, ahí se guardan los <strong>usuarios</strong> (hash de contraseña) y una <strong>copia de los listados</strong> de sensores y tareas cada vez que un administrador refresca esas listas (útil como historial o respaldo ligero, no sustituye a Zebra).
             </li>
           </ul>
-          <p className="text-sm text-gray-600">
-            Las contraseñas en <code className="bg-gray-100 px-1 rounded text-sm">VITE_*</code> acaban en el JavaScript del cliente; usad solo entornos controlados, HTTPS y rotación de credenciales si la superficie de riesgo lo exige.
-          </p>
+        </Section>
+
+        <Section id="acceso-usuarios" title="Acceso, nuevos usuarios y roles">
+          {backendOn ? (
+            <>
+              <p>
+                Este despliegue usa el <strong>backend con SQLite</strong>: el login valida usuario y contraseña contra la base del servidor y devuelve un JWT. Los administradores gestionan cuentas en el menú <strong>Usuarios</strong>.
+              </p>
+              <p>
+                El primer arranque del servidor crea un administrador con <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_PASSWORD</code> del <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> si la tabla de usuarios está vacía.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Sin <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code>, el acceso es solo en el navegador: las credenciales válidas se definen en el <strong>build</strong> de la SPA (<code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERNAME</code> / <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_PASSWORD</code> o <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERS</code> en JSON).
+              </p>
+              <p>
+                Para <strong>añadir o quitar personas</strong> en ese modo hay que cambiar el <code className="bg-gray-100 px-1 rounded text-sm">.env</code>, <strong>recompilar</strong> y publicar de nuevo el <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>. No hay panel <strong>Usuarios</strong> activo hasta que conectes el backend.
+              </p>
+              <p className="text-sm text-gray-600">
+                Las contraseñas en <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code> quedan en el JavaScript del cliente; en producción suele preferirse el backend con SQLite.
+              </p>
+            </>
+          )}
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="min-w-full text-sm text-left">
               <thead className="bg-gray-100 text-gray-800">
@@ -162,7 +185,7 @@ const Help = () => {
 
         <Section id="sesion" title="Inicio de sesión y cierre de sesión">
           <p>
-            En la pantalla de login introduce usuario y contraseña definidos en el despliegue. Tras un acceso correcto, la sesión en este navegador dura <strong>aproximadamente una hora</strong>; pasado ese tiempo tendrás que volver a identificarte.
+            En la pantalla de login introduce usuario y contraseña. Con <strong>backend SQLite</strong>, la sesión (JWT) dura del orden de <strong>24 horas</strong>; solo con login por <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code>, la sesión en el navegador dura <strong>aproximadamente una hora</strong>. Cuando caduque, vuelve a identificarte.
           </p>
           <p>
             <strong>Cerrar sesión</strong>: botón al pie del menú lateral. En la barra lateral también se muestra tu rol (Administrador u Operador) y, si está disponible, tu nombre de usuario.

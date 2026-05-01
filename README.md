@@ -2,8 +2,18 @@
 
 Interfaz web para gestionar sensores electrónicos de temperatura **Zebra** mediante las APIs de Management y Data Reporting de Zebra Data Services: configuración de conexión, enrolado de sensores, creación y control de tareas de monitoreo, y consulta de logs y alarmas.
 
+## Dónde se guarda la información
+
+| Qué | Dónde |
+|-----|--------|
+| **Sensores, tareas, logs, alarmas (datos operativos)** | En **Zebra Data Services** (APIs en la nube). La SPA solo los consulta o modifica en tiempo real; no hay copia local salvo la opción siguiente. |
+| **URL de Zebra, API key, logo, favicon** | En el **navegador** (`localStorage`) si los guardas desde **Configuración**; si no, valores por defecto del `.env` del front (`VITE_API_*`). |
+| **Sesión de login del front** | En **`localStorage`**: JWT si usas el **backend** (`VITE_BACKEND_URL`), o sesión corta (~1 h) si el login es solo con `VITE_APP_*` en el bundle. |
+| **Usuarios y copia de listados** (opcional) | En **SQLite** en el servidor Node (`server/`): usuarios con contraseña hasheada; tablas de respaldo cuando un administrador refresca **Sensores** o **Tareas** con el backend activo. |
+
 ## Características
 
+- **Backend opcional (SQLite):** API Node con usuarios, JWT y sincronización de listados de sensores/tareas. Ver [Backend (SQLite)](#backend-sqlite).
 - **Configuración:** Base URL y API key desde la interfaz (localStorage) o valores por defecto desde `.env`.
 - **Branding opcional:** Logo en la barra lateral y favicon cargados desde archivos locales (guardados en el navegador).
 - **Sensores:** Paginación, filtro de texto, orden, **filtros avanzados** (task_id, estados, fechas de enrolado, batería baja); enrolar / desenrolar; aviso de temperatura no válida (~327,67 °C).
@@ -22,6 +32,7 @@ Interfaz web para gestionar sensores electrónicos de temperatura **Zebra** medi
 git clone <tu-repo>
 cd zebra_sensors
 npm install
+npm run server:install
 ```
 
 Copia variables de entorno de ejemplo:
@@ -32,11 +43,26 @@ cp .env.example .env
 
 Edita `.env` con tus valores (API, login de la app, puertos si los necesitas).
 
+Si vas a usar el backend SQLite, copia también `server/.env.example` a `server/.env`, define al menos `JWT_SECRET` (16+ caracteres) y ajusta `CORS_ORIGIN` al origen del front (p. ej. `http://localhost:5173`). Opcional: `BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` para el primer usuario (por defecto `admin` / `changeme` si la base está vacía).
+
+En el `.env` del **front**, si quieres login contra SQLite, añade por ejemplo `VITE_BACKEND_URL=http://localhost:3001` (misma URL que `PORT` del servidor). Sin esa variable, el login sigue siendo el modo solo front (`VITE_APP_USERNAME` / `VITE_APP_PASSWORD` o `VITE_APP_USERS`).
+
+## Backend (SQLite)
+
+- **Carpeta:** `server/` — dependencias propias (`npm run server:install`).
+- **Arranque en desarrollo:** `npm run server:dev` (recarga con `--watch`).
+- **Base de datos:** fichero configurable con `DATABASE_PATH` (por defecto `server/data/app.db`; la carpeta se crea sola).
+- **API:** `POST /api/auth/login`, `GET /api/auth/me`, `GET|POST /api/users` (admin), `GET /api/sensors/cached`, `POST /api/sensors/sync` (admin), análogo para `/api/tasks/*`.
+- **Usuarios en la UI:** con backend y sesión de administrador, menú **Usuarios** (`/users`).
+- **CLI extra usuario:** desde `server/`, `node scripts/seed.js <usuario> <clave> [admin|operator]`.
+
 ## Scripts npm
 
 | Comando | Uso |
 |--------|-----|
 | `npm run dev` | Servidor de desarrollo Vite (hot reload). |
+| `npm run server:install` | Instala dependencias del backend en `server/`. |
+| `npm run server:dev` | Arranca la API Node (SQLite) en desarrollo. |
 | `npm run build` | Genera la carpeta `dist/` para producción. |
 | `npm start` | Ejecuta **`npm run build`** automáticamente y luego sirve `dist/` con **Vite preview** (vía script `prestart` de npm). |
 | `npm run preview` | Solo **Vite preview** (no recompila). Útil si ya tienes `dist/` y quieres arrancar el servidor más rápido. |
@@ -78,7 +104,7 @@ Documentación ampliada: [docs/api_configuration.md](docs/api_configuration.md),
 
 ## Uso rápido
 
-- **Login:** credenciales definidas en `.env` (`VITE_APP_USERNAME`, `VITE_APP_PASSWORD`).
+- **Login:** con `VITE_BACKEND_URL`, contra **SQLite** en el servidor (usuario inicial vía `BOOTSTRAP_ADMIN_*` o `node server/scripts/seed.js`). Sin esa variable, credenciales en el `.env` del front (`VITE_APP_USERNAME`, `VITE_APP_PASSWORD` o `VITE_APP_USERS`).
 - **Sensores:** refrescar lista, enrolar por número de serie, desenrolar.
 - **Tareas:** crear desde el modal, expandir una tarea para asociar sensores, detener, **Extraer datos** / **Extraer alarmas**.
 
@@ -96,6 +122,7 @@ El repositorio incluye además `Zebra Copy.postman_collection.json` como referen
 ## Estructura del repositorio
 
 - **`src/`** — aplicación principal (React + Vite).
+- **`server/`** — API Node + SQLite (usuarios, respaldo de listados).
 - **`docs/`** — guías, referencia de APIs y [docs/webhooks.md](docs/webhooks.md).
 
 ## Licencia

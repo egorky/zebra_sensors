@@ -6,8 +6,14 @@
 
 Al abrir la aplicación verás la pantalla de login.
 
-- **Usuario** y **contraseña** deben coincidir con `VITE_APP_USERNAME` y `VITE_APP_PASSWORD` del archivo `.env` con el que se compiló o sirve la app.
-- Tras un inicio correcto accedes al panel principal.
+- **Con backend SQLite** (`VITE_BACKEND_URL` en el `.env` del front apuntando a la API Node en `server/`): usuario y contraseña se validan contra la base SQLite del servidor; recibes un **JWT** (sesión del orden de 24 h). El primer arranque del servidor puede crear un administrador con `BOOTSTRAP_ADMIN_*` en `server/.env` (véase el [README](../README.md) sección *Backend (SQLite)*).
+- **Sin backend** (sin `VITE_BACKEND_URL`): las credenciales coinciden con `VITE_APP_USERNAME` / `VITE_APP_PASSWORD` o la lista JSON `VITE_APP_USERS` del `.env` con el que se compiló la app (sesión en navegador ~1 h).
+
+Tras un inicio correcto accedes al panel principal.
+
+### Usuarios (solo administrador, con backend)
+
+Si el backend está activo, el menú **Usuarios** permite crear y eliminar cuentas en SQLite (roles `admin` y `operator`). Sin `VITE_BACKEND_URL` ese menú no aplica: los accesos van solo por variables `VITE_APP_*` y hay que recompilar para cambiar usuarios.
 
 ### Cerrar sesión
 
@@ -34,6 +40,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
 - **Paginación** — tamaño de página y botones anterior/siguiente; se muestra el total según la API.
 - **Última temperatura** — si aparece como no válida (~327,67 °C), el sensor puede estar saliendo de reposo; es el comportamiento descrito por Zebra.
 - **Refrescar**, **Enrolar**, **Desenrolar** como antes.
+- **Copia en servidor (opcional):** con backend configurado, cada vez que un **administrador** carga la lista desde Zebra, la app envía en segundo plano un volcado a SQLite (`sensor_snapshots`) como respaldo del último listado visto (no sustituye a Zebra).
 
 ## 5. Tareas
 
@@ -45,9 +52,12 @@ Más detalle en [api_configuration.md](api_configuration.md).
   - **Añadir activo** — cuerpo según API (`asset`, `id_format`).
   - **Asociar sensor**, **Detener tarea**.
 
+- **Copia en servidor (opcional):** con backend y usuario administrador, al cargar la lista de tareas desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).
+
 ## 6. Ejecución
 
-- Desarrollo: `npm run dev`.
+- Desarrollo del front: `npm run dev`.
+- API con SQLite (opcional): `npm run server:dev` desde la raíz del repo (tras `npm run server:install`). Detalle en el [README](../README.md).
 - Producción: `npm start` (compila y sirve `dist/`); opcionalmente **PM2** — véase el [README](../README.md). Para solo servir sin recompilar: `npm run preview` si ya existe `dist/`.
 
 ## 7. Documentación Zebra
