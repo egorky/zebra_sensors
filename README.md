@@ -37,10 +37,8 @@ Edita `.env` con tus valores (API, login de la app, puertos si los necesitas).
 |--------|-----|
 | `npm run dev` | Servidor de desarrollo Vite (hot reload). |
 | `npm run build` | Genera la carpeta `dist/` para producción. |
-| `npm start` | Sirve `dist/` con **Vite preview** (modo producción local o proceso gestionado por PM2). |
-| `npm run preview` | Equivalente a `npm start`. |
-
-**Importante:** antes de `npm start` debes ejecutar al menos una vez `npm run build`.
+| `npm start` | Ejecuta **`npm run build`** automáticamente y luego sirve `dist/` con **Vite preview** (vía script `prestart` de npm). |
+| `npm run preview` | Solo **Vite preview** (no recompila). Útil si ya tienes `dist/` y quieres arrancar el servidor más rápido. |
 
 ### Producción y PM2
 
@@ -53,17 +51,20 @@ El servidor de preview escucha por defecto en `0.0.0.0:4173`. Puedes cambiar hos
 Ejemplo de arranque con PM2 desde la raíz del proyecto:
 
 ```bash
-npm run build
 pm2 start npm --name zebra-sensor-manager -- start
 ```
 
+(`npm start` ya incluye el build; en PM2 cada arranque/restart recompilará salvo que uses `preview` con un `dist` generado en CI.)
+
 Para ver logs y estado: `pm2 logs zebra-sensor-manager`, `pm2 status`.
 
-Tras un despliegue nuevo:
+Tras un despliegue nuevo (por ejemplo tras `git pull`):
 
 ```bash
-npm run build && pm2 restart zebra-sensor-manager
+pm2 restart zebra-sensor-manager
 ```
+
+Si prefieres no recompilar en cada restart de PM2, genera `dist/` en tu pipeline y usa en el ecosistema de PM2 el script `preview` en lugar de `start`.
 
 ## Configuración de la API Zebra
 

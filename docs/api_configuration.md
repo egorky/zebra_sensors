@@ -31,7 +31,7 @@ VITE_API_KEY=tu_api_key_aqui
 Variables relacionadas con los servidores:
 
 - `PORT`, `HOST` — servidor de desarrollo (`npm run dev`).
-- `PREVIEW_HOST`, `PREVIEW_PORT` — servidor tras `npm run build` + `npm start` (Vite preview, útil con PM2).
+- `PREVIEW_HOST`, `PREVIEW_PORT` — servidor de **Vite preview** al usar `npm start` o `npm run preview` (útil con PM2). `npm start` ejecuta el build antes de arrancar.
 - `PREVIEW_ALLOWED_HOSTS` — opcional, lista separada por comas para restricción de hosts en preview.
 
 **Nota:** Las variables `VITE_*` se inyectan en el cliente en tiempo de compilación. Si cambias `.env`, vuelve a ejecutar `npm run dev` o `npm run build` según el modo.

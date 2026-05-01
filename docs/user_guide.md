@@ -46,7 +46,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
 ## 6. Ejecución
 
 - Desarrollo: `npm run dev`.
-- Producción: `npm run build` y `npm start`; opcionalmente **PM2** — véase el [README](../README.md).
+- Producción: `npm start` (compila y sirve `dist/`); opcionalmente **PM2** — véase el [README](../README.md). Para solo servir sin recompilar: `npm run preview` si ya existe `dist/`.
 
 ## 7. Documentación Zebra
 
