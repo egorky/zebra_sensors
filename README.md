@@ -88,6 +88,30 @@ Documentación: [docs/api_configuration.md](docs/api_configuration.md), [docs/us
 - **`server/`** — Express + SQLite (`/api`).
 - **`docs/`** — guías.
 
+## 502 Bad Gateway en el navegador
+
+Express **no** devuelve 502 por defecto. Ese código lo genera casi siempre un **proxy delante** (nginx, Caddy, Traefik, balanceador, Cloudflare) cuando **no puede conectar** con Node o el upstream cae.
+
+1. **Comprueba Node sin proxy** (en el servidor): `curl -sf http://127.0.0.1:5173/health` (ajusta el puerto a tu `PORT` del `.env`). Si aquí falla, el proceso no está escuchando o el puerto no coincide.
+2. **Alinea el puerto del proxy** con `PORT` del `.env`. Si nginx hace `proxy_pass http://127.0.0.1:4173` pero la app usa `5173`, obtendrás 502.
+3. **Ejemplo mínimo nginx** (HTTPS al cliente, HTTP a Node en el mismo host):
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:5173;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+En el `.env` del proyecto añade **`TRUST_PROXY=1`** cuando exista ese proxy.
+
+4. **SELinux** (CentOS/RHEL): nginx a veces no puede hacer conexiones salientes hasta activar `httpd_can_network_connect` (o equivalente).
+5. **Node en el host y nginx en Docker**: `127.0.0.1` dentro del contenedor no es tu Node; usa la IP del host o `host.docker.internal` según el motor.
+
 ## Licencia
 
 Véase [LICENSE](LICENSE).

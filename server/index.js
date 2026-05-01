@@ -1,4 +1,5 @@
 import './loadRootEnv.js';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -30,6 +31,12 @@ ensureBootstrapUser(db);
 
 const requireAuth = createAuthMiddleware(JWT_SECRET);
 const app = express();
+const trustProxy = String(process.env.TRUST_PROXY || '').trim();
+if (trustProxy === '1' || trustProxy.toLowerCase() === 'true') {
+  app.set('trust proxy', 1);
+} else if (trustProxy !== '' && !Number.isNaN(Number(trustProxy))) {
+  app.set('trust proxy', Number(trustProxy));
+}
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (_req, res) => {
@@ -90,11 +97,42 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Error interno' });
 });
 
-app.listen(PORT, HOST, () => {
-  const mode = isProd ? 'producción (dist/)' : 'desarrollo (Vite)';
-  // No sustituir 0.0.0.0 por localhost: en ese caso Express escucha en todas las interfaces.
-  console.log(`[app] escuchando en http://${HOST}:${PORT} — ${mode}`);
-  if (HOST === '0.0.0.0' || HOST === '::') {
-    console.log(`[app] accesible desde la red en http://<ip-de-este-servidor>:${PORT} (y en http://127.0.0.1:${PORT} en local)`);
-  }
-});
+const wrapIpv4 = HOST === '0.0.0.0' || HOST === '::' || HOST === '*' || HOST === 'all';
+
+function logStarted(modeLabel, bindNote) {
+  console.log(`[app] escuchando (${bindNote}) puerto ${PORT} — ${modeLabel}`);
+  console.log(`[app] prueba en esta máquina: curl -sf http://127.0.0.1:${PORT}/health || echo "fallo health"`);
+}
+
+const modeLabel = isProd ? 'producción (dist/)' : 'desarrollo (Vite)';
+const server = http.createServer(app);
+
+if (wrapIpv4) {
+  // IPv4 + IPv6 en la mayoría de kernels (mejor que solo 0.0.0.0 si el cliente usa IPv6).
+  server.once('error', (err) => {
+    if (err.code === 'EADDRNOTAVAIL' || err.code === 'EAFNOSUPPORT' || err.code === 'EINVAL') {
+      const s2 = http.createServer(app);
+      s2.listen(PORT, '0.0.0.0', () => {
+        logStarted(modeLabel, 'solo IPv4 (0.0.0.0)');
+      });
+      s2.once('error', (e2) => {
+        console.error(e2);
+        process.exit(1);
+      });
+    } else {
+      console.error(err);
+      process.exit(1);
+    }
+  });
+  server.listen({ port: PORT, host: '::', ipv6Only: false }, () => {
+    logStarted(modeLabel, 'IPv4 e IPv6 (::, ipv6Only:false)');
+  });
+} else {
+  server.once('error', (err) => {
+    console.error(err);
+    process.exit(1);
+  });
+  server.listen(PORT, HOST, () => {
+    logStarted(modeLabel, `host ${HOST}`);
+  });
+}
