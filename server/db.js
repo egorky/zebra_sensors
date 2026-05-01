@@ -17,6 +17,7 @@ export function openDatabase(databasePath) {
       username TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'operator')),
+      must_change_password INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -39,6 +40,13 @@ export function openDatabase(databasePath) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  try {
+    db.prepare('SELECT must_change_password FROM users LIMIT 1').get();
+  } catch {
+    db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0');
+  }
+
   return db;
 }
 
@@ -50,9 +58,9 @@ export function ensureBootstrapUser(db) {
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'changeme';
   const hash = bcrypt.hashSync(password, 10);
   db.prepare(
-    `INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')`
+    `INSERT INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, 'admin', 1)`
   ).run(username, hash);
   console.warn(
-    `[zebra-server] Base sin usuarios: creado administrador "${username}". Cambia la contraseña y define BOOTSTRAP_* en producción.`
+    `[zebra-server] Base sin usuarios: creado administrador "${username}" (debe cambiar contraseña en la app). Define BOOTSTRAP_* en producción y JWT_SECRET seguro.`
   );
 }

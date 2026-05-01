@@ -6,7 +6,7 @@ import TaskDetails from './TaskDetails';
 import { TASK_SORT_FIELDS, TASK_STATUSES } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminRole } from '../../constants/authRoles';
-import { isBackendConfigured, readBackendAuthFromStorage, syncTasksToBackend } from '../../services/backendApi';
+import { hasBackendUrl, readBackendAuthFromStorage, syncTasksToBackend } from '../../services/backendApi';
 
 const Tasks = () => {
   const { role } = useAuth();
@@ -73,7 +73,7 @@ const Tasks = () => {
       const list = data.tasks || [];
       setTasks(list);
       setPageResponse(data.page_response || null);
-      if (canManageTasks && isBackendConfigured() && readBackendAuthFromStorage()?.token && list.length) {
+      if (canManageTasks && hasBackendUrl() && readBackendAuthFromStorage()?.token && list.length) {
         syncTasksToBackend(list).catch(() => {});
       }
     } catch (err) {

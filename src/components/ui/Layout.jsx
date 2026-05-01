@@ -7,7 +7,7 @@ import { getConfig, CONFIG_UPDATED_EVENT } from '../../services/api';
 const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout, isAdmin, username, role } = useAuth();
+  const { isAuthenticated, logout, isAdmin, username, role, mustChangePassword } = useAuth();
   const [logoDataUrl, setLogoDataUrl] = useState(() => getConfig().logoDataUrl || '');
 
   useEffect(() => {
@@ -79,6 +79,16 @@ const Layout = ({ children }) => {
           <div className="px-6 pb-2 text-xs text-gray-500">
             {username ? <span className="font-medium text-gray-700">{username} · </span> : null}
             <span>{role === 'operator' ? 'Operador' : 'Administrador'}</span>
+          </div>
+        )}
+        {isAuthenticated && !mustChangePassword && (
+          <div className="px-6 pb-2">
+            <Link
+              to="/change-password"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Cambiar contraseña
+            </Link>
           </div>
         )}
         {isAuthenticated && (

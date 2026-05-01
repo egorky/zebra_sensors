@@ -2,6 +2,8 @@
 
 Para usar la aplicación necesitas la URL base (`baseUrl`) y la clave de API (`apikey`) de Zebra Data Services. Puedes definirlos en la interfaz o en el archivo `.env`.
 
+La aplicación también **requiere** la URL del API propio en **`VITE_BACKEND_URL`** (servidor Node + SQLite). Ver [backend_sqlite.md](backend_sqlite.md).
+
 ## Método 1: Interfaz web (recomendado para el día a día)
 
 1. Inicia sesión y abre **Configuración** en el menú lateral.
@@ -26,21 +28,18 @@ El botón **Limpiar configuración guardada** elimina del navegador la URL, la A
 ```dotenv
 VITE_API_BASE_URL=https://api.zebra.com/v2
 VITE_API_KEY=tu_api_key_aqui
+VITE_BACKEND_URL=http://localhost:3001
 ```
 
-Variables relacionadas con los servidores:
+Variables relacionadas con **Vite**:
 
-- `PORT`, `HOST` — servidor de desarrollo (`npm run dev`).
-- `PREVIEW_HOST`, `PREVIEW_PORT` — servidor de **Vite preview** al usar `npm start` o `npm run preview` (útil con PM2). `npm start` ejecuta el build antes de arrancar.
-- `PREVIEW_ALLOWED_HOSTS` — opcional, lista separada por comas para restricción de hosts en preview.
+- **`DEV_HOST`**, **`DEV_PORT`** — servidor de desarrollo (`npm run dev`).
+- **`HOST`**, **`PORT`** — servidor que sirve **`dist/`** con `vite preview` (`npm start` / `npm run preview`).
+- **`ALLOWED_HOSTS`** — opcional, lista separada por comas para restricción de hosts en preview.
 
 **Nota:** Las variables `VITE_*` se inyectan en el cliente en tiempo de compilación. Si cambias `.env`, vuelve a ejecutar `npm run dev` o `npm run build` según el modo.
 
-### Backend opcional (login y SQLite)
-
-Si defines `VITE_BACKEND_URL` (por ejemplo `http://localhost:3001`) apuntando a la API en `server/`, el **inicio de sesión** de la aplicación web deja de usar `VITE_APP_USERNAME` / `VITE_APP_PASSWORD` y pasa a validar contra la base **SQLite** del servidor. La configuración de Zebra (Base URL, API key, branding) **sigue** siendo la de esta pantalla o del `.env` del front (`VITE_API_*`); el backend no sustituye esas credenciales de Zebra.
-
-Variables del servidor: copia `server/.env.example` a `server/.env` (`JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, etc.). Resumen en el [README](../README.md).
+Variables del **servidor API** (`server/.env`): `PORT`, `JWT_SECRET`, `CORS_ORIGIN`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
 
 ## Referencia de APIs Zebra
 

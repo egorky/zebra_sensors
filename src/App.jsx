@@ -9,6 +9,7 @@ import Tasks from './components/tasks/Tasks';
 import Help from './components/ui/Help';
 import Users from './components/users/Users';
 import Login from './components/auth/Login';
+import ChangePassword from './components/auth/ChangePassword';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
@@ -69,6 +70,7 @@ function App() {
                 </AdminRoute>
               }
             />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/sensors" element={<Sensors />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/ayuda" element={<Help />} />

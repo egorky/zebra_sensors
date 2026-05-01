@@ -1,28 +1,25 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Carga las variables de entorno del archivo .env
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
+    // Desarrollo con hot reload (`npm run dev`)
     server: {
-      // Usa el puerto de la variable de entorno PORT o el puerto 5173 por defecto
-      port: env.PORT || 5173,
-      // Usa el host de la variable de entorno HOST o 'localhost' por defecto
-      // Para exponer en todas las IPs, establece HOST=0.0.0.0 en tu .env
-      host: env.HOST || 'localhost',
+      port: Number(env.DEV_PORT || 5173),
+      host: env.DEV_HOST || 'localhost',
     },
+    // Servidor estático que sirve `dist/` (`npm run preview`, `npm start`)
     preview: {
-      // Servidor de producción local / PM2 (`npm start`). Configurable con PREVIEW_HOST y PREVIEW_PORT en `.env`.
-      host: env.PREVIEW_HOST || '0.0.0.0',
-      port: Number(env.PREVIEW_PORT || 4173),
+      host: env.HOST || '0.0.0.0',
+      port: Number(env.PORT || 4173),
       strictPort: true,
-      allowedHosts: env.PREVIEW_ALLOWED_HOSTS
-        ? env.PREVIEW_ALLOWED_HOSTS.split(',').map((h) => h.trim()).filter(Boolean)
+      allowedHosts: env.ALLOWED_HOSTS
+        ? env.ALLOWED_HOSTS.split(',').map((h) => h.trim()).filter(Boolean)
         : true,
     },
-  }
-})
+  };
+});

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users as UsersIcon, Trash2, UserPlus, AlertTriangle } from 'lucide-react';
-import { isBackendConfigured, fetchBackendUsers, createBackendUser, deleteBackendUser } from '../../services/backendApi';
+import { hasBackendUrl, fetchBackendUsers, createBackendUser, deleteBackendUser } from '../../services/backendApi';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -13,8 +13,8 @@ const Users = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
-    if (!isBackendConfigured()) {
-      setError('Define VITE_BACKEND_URL en el front y arranca el servidor API para gestionar usuarios en SQLite.');
+    if (!hasBackendUrl()) {
+      setError('Define VITE_BACKEND_URL en el .env del front y arranca el servidor API.');
       setLoading(false);
       return;
     }
@@ -73,24 +73,6 @@ const Users = () => {
       setError(e.message);
     }
   };
-
-  if (!isBackendConfigured()) {
-    return (
-      <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <UsersIcon size={32} /> Usuarios (SQLite)
-        </h1>
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg flex gap-2">
-          <AlertTriangle size={22} className="shrink-0 mt-0.5" />
-          <p>
-            El backend con SQLite no está configurado en este despliegue. Añade <code className="bg-white px-1 rounded text-sm">VITE_BACKEND_URL</code> (por ejemplo{' '}
-            <code className="bg-white px-1 rounded text-sm">http://localhost:3001</code>) en el <code className="bg-white px-1 rounded text-sm">.env</code> del front, ejecuta{' '}
-            <code className="bg-white px-1 rounded text-sm">npm install</code> y <code className="bg-white px-1 rounded text-sm">npm run dev</code> dentro de <code className="bg-white px-1 rounded text-sm">server/</code>, y vuelve a cargar esta página.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl">

@@ -22,7 +22,11 @@ const role = roleArg === 'operator' ? 'operator' : 'admin';
 const db = openDatabase(dbPath);
 const hash = bcrypt.hashSync(password, 10);
 try {
-  db.prepare(`INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`).run(username, hash, role);
+  db.prepare(`INSERT INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, ?, 0)`).run(
+    username,
+    hash,
+    role
+  );
   console.log(`Usuario "${username}" creado (${role}).`);
 } catch (e) {
   if (String(e.message).includes('UNIQUE')) {

@@ -25,7 +25,11 @@ export function createUsersRouter(db) {
     }
     try {
       const hash = bcrypt.hashSync(password, 10);
-      const info = db.prepare(`INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`).run(username, hash, role);
+      const info = db
+        .prepare(
+          `INSERT INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, ?, 0)`
+        )
+        .run(username, hash, role);
       res.status(201).json({ id: info.lastInsertRowid, username, role });
     } catch (e) {
       if (String(e.message).includes('UNIQUE')) {

@@ -1,6 +1,7 @@
 const trimBase = () => import.meta.env.VITE_BACKEND_URL?.trim()?.replace(/\/$/, '') || '';
 
-export function isBackendConfigured() {
+/** La URL del API Node es obligatoria para esta aplicación. */
+export function hasBackendUrl() {
   return Boolean(trimBase());
 }
 
@@ -13,7 +14,7 @@ export function readBackendAuthFromStorage() {
     const raw = localStorage.getItem('auth');
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.mode !== 'backend' || !data.token || !data.expiresAt) return null;
+    if (!data.token || !data.expiresAt) return null;
     if (Date.now() >= data.expiresAt) return null;
     return { token: data.token, role: data.role, username: data.username };
   } catch {
@@ -21,8 +22,35 @@ export function readBackendAuthFromStorage() {
   }
 }
 
+export async function authChangePassword(currentPassword, newPassword) {
+  const base = trimBase();
+  if (!base) {
+    throw new Error('Falta VITE_BACKEND_URL');
+  }
+  const auth = readBackendAuthFromStorage();
+  if (!auth?.token) {
+    throw new Error('Sesión no válida');
+  }
+  const r = await fetch(`${base}/api/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    throw new Error(body.error || `Error ${r.status}`);
+  }
+  return body;
+}
+
 export async function backendLogin(username, password) {
   const base = trimBase();
+  if (!base) {
+    throw new Error('Falta VITE_BACKEND_URL');
+  }
   const r = await fetch(`${base}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,9 +65,12 @@ export async function backendLogin(username, password) {
 
 async function backendFetch(path, options = {}) {
   const base = trimBase();
+  if (!base) {
+    throw new Error('Falta VITE_BACKEND_URL');
+  }
   const auth = readBackendAuthFromStorage();
   if (!auth?.token) {
-    throw new Error('Sesión de backend no válida');
+    throw new Error('Sesión no válida');
   }
   const headers = {
     Authorization: `Bearer ${auth.token}`,

@@ -11,7 +11,11 @@ export function createAuthRouter(db, jwtSecret) {
     if (!username || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña obligatorios' });
     }
-    const row = db.prepare('SELECT id, username, password_hash, role FROM users WHERE username = ?').get(username);
+    const row = db
+      .prepare(
+        'SELECT id, username, password_hash, role, must_change_password FROM users WHERE username = ?'
+      )
+      .get(username);
     if (!row || !bcrypt.compareSync(password, row.password_hash)) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
@@ -23,7 +27,12 @@ export function createAuthRouter(db, jwtSecret) {
     res.json({
       token,
       expiresIn: 86400,
-      user: { id: row.id, username: row.username, role: row.role },
+      user: {
+        id: row.id,
+        username: row.username,
+        role: row.role,
+        mustChangePassword: row.must_change_password === 1,
+      },
     });
   });
 

@@ -7,6 +7,7 @@ import { createAuthRouter } from './routes/auth.js';
 import { createUsersRouter } from './routes/users.js';
 import { createSensorsRouter } from './routes/sensors.js';
 import { createTasksRouter } from './routes/tasks.js';
+import { changePasswordHandler } from './routes/changePassword.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -34,8 +35,16 @@ const authRouter = createAuthRouter(db, JWT_SECRET);
 app.use('/api/auth', authRouter);
 
 app.get('/api/auth/me', requireAuth, (req, res) => {
-  res.json({ user: req.user });
+  const row = db.prepare('SELECT must_change_password FROM users WHERE id = ?').get(req.user.id);
+  res.json({
+    user: {
+      ...req.user,
+      mustChangePassword: row ? row.must_change_password === 1 : false,
+    },
+  });
 });
+
+app.post('/api/auth/change-password', requireAuth, changePasswordHandler(db, JWT_SECRET));
 
 const usersRouter = createUsersRouter(db);
 app.use('/api/users', requireAuth, requireAdmin, usersRouter);

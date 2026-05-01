@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { isBackendConfigured } from '../../services/backendApi';
-
 const Section = ({ id, title, children }) => (
   <section id={id} className="scroll-mt-8 border-b border-gray-200 pb-8 last:border-0 last:pb-0">
     <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
@@ -12,7 +10,6 @@ const Section = ({ id, title, children }) => (
 
 const Help = () => {
   const { isAdmin } = useAuth();
-  const backendOn = isBackendConfigured();
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Ayuda</h1>
@@ -126,37 +123,21 @@ const Help = () => {
               <strong>Datos en vivo de Zebra</strong> (listado de sensores, tareas, enrolados, logs, etc.): <strong>no se guardan en este proyecto</strong> salvo en memoria mientras usas la pantalla. Siempre se obtienen o envían mediante las APIs de Zebra Data Services.
             </li>
             <li>
-              <strong>Navegador (localStorage)</strong>: la <strong>configuración de conexión</strong> a Zebra (Base URL, API key) y el <strong>branding</strong> (logo, favicon) si los guardas desde la interfaz. La <strong>sesión de login</strong> del front también va en <code className="bg-gray-100 px-1 rounded text-sm">localStorage</code> (token JWT si hay backend, o marca temporal si el login es solo con variables <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code>).
+              <strong>Navegador (localStorage)</strong>: la <strong>configuración de conexión</strong> a Zebra (Base URL, API key) y el <strong>branding</strong> (logo, favicon) si los guardas desde la interfaz. La <strong>sesión de login</strong> (token JWT) también se guarda aquí.
             </li>
             <li>
-              <strong>Servidor con SQLite</strong> (opcional): si defines <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> y arrancas la API en <code className="bg-gray-100 px-1 rounded text-sm">server/</code>, ahí se guardan los <strong>usuarios</strong> (hash de contraseña) y una <strong>copia de los listados</strong> de sensores y tareas cada vez que un administrador refresca esas listas (útil como historial o respaldo ligero, no sustituye a Zebra).
+              <strong>Servidor Node con SQLite</strong> (<code className="bg-gray-100 px-1 rounded text-sm">server/</code>, URL <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> en el front): <strong>usuarios</strong> (hash de contraseña) y <strong>copia de listados</strong> de sensores y tareas cuando un administrador refresca esas pantallas (respaldo ligero; la fuente de verdad sigue siendo Zebra).
             </li>
           </ul>
         </Section>
 
         <Section id="acceso-usuarios" title="Acceso, nuevos usuarios y roles">
-          {backendOn ? (
-            <>
-              <p>
-                Este despliegue usa el <strong>backend con SQLite</strong>: el login valida usuario y contraseña contra la base del servidor y devuelve un JWT. Los administradores gestionan cuentas en el menú <strong>Usuarios</strong>.
-              </p>
-              <p>
-                El primer arranque del servidor crea un administrador con <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_PASSWORD</code> del <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> si la tabla de usuarios está vacía.
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                Sin <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code>, el acceso es solo en el navegador: las credenciales válidas se definen en el <strong>build</strong> de la SPA (<code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERNAME</code> / <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_PASSWORD</code> o <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_USERS</code> en JSON).
-              </p>
-              <p>
-                Para <strong>añadir o quitar personas</strong> en ese modo hay que cambiar el <code className="bg-gray-100 px-1 rounded text-sm">.env</code>, <strong>recompilar</strong> y publicar de nuevo el <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>. No hay panel <strong>Usuarios</strong> activo hasta que conectes el backend.
-              </p>
-              <p className="text-sm text-gray-600">
-                Las contraseñas en <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code> quedan en el JavaScript del cliente; en producción suele preferirse el backend con SQLite.
-              </p>
-            </>
-          )}
+          <p>
+            El login valida usuario y contraseña contra la <strong>base SQLite</strong> del API Node y devuelve un <strong>JWT</strong>. En el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> del front debe figurar <code className="bg-gray-100 px-1 rounded text-sm">VITE_BACKEND_URL</code> apuntando a ese servidor (mismo host/puerto que <code className="bg-gray-100 px-1 rounded text-sm">PORT</code> en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code>). Los administradores gestionan cuentas en el menú <strong>Usuarios</strong>.
+          </p>
+          <p>
+            El primer arranque del servidor crea un administrador con <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_USERNAME</code> y <code className="bg-gray-100 px-1 rounded text-sm">BOOTSTRAP_ADMIN_PASSWORD</code> en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> si la tabla de usuarios está vacía (por defecto <code className="bg-gray-100 px-1 rounded text-sm">admin</code> / <code className="bg-gray-100 px-1 rounded text-sm">changeme</code>). Ese primer acceso <strong>debe cambiar la contraseña</strong> antes de usar el resto de la aplicación.
+          </p>
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="min-w-full text-sm text-left">
               <thead className="bg-gray-100 text-gray-800">
@@ -185,7 +166,7 @@ const Help = () => {
 
         <Section id="sesion" title="Inicio de sesión y cierre de sesión">
           <p>
-            En la pantalla de login introduce usuario y contraseña. Con <strong>backend SQLite</strong>, la sesión (JWT) dura del orden de <strong>24 horas</strong>; solo con login por <code className="bg-gray-100 px-1 rounded text-sm">VITE_APP_*</code>, la sesión en el navegador dura <strong>aproximadamente una hora</strong>. Cuando caduque, vuelve a identificarte.
+            En la pantalla de login introduce usuario y contraseña. La sesión (JWT) dura del orden de <strong>24 horas</strong>; cuando caduque, vuelve a identificarte.
           </p>
           <p>
             <strong>Cerrar sesión</strong>: botón al pie del menú lateral. En la barra lateral también se muestra tu rol (Administrador u Operador) y, si está disponible, tu nombre de usuario.
@@ -354,16 +335,19 @@ const Help = () => {
           </p>
         </Section>
 
-        <Section id="ejecucion" title="Desarrollo y despliegue del front">
+        <Section id="ejecucion" title="Desarrollo y despliegue">
           <ul className="list-disc list-inside space-y-2">
             <li>
-              <strong>Desarrollo local</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> (servidor de Vite).
+              <strong>API Node + SQLite</strong>: desde la raíz, <code className="bg-gray-100 px-1 rounded text-sm">npm run server:install</code> una vez y <code className="bg-gray-100 px-1 rounded text-sm">npm run server:dev</code> para el backend. Configuración en <code className="bg-gray-100 px-1 rounded text-sm">server/.env</code> (puerto <code className="bg-gray-100 px-1 rounded text-sm">PORT</code>, típicamente 3001).
             </li>
             <li>
-              <strong>Producción</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run build</code> genera <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>; a continuación puedes servir esa carpeta con el preview de Vite (por ejemplo <code className="bg-gray-100 px-1 rounded text-sm">npm start</code> si tu proyecto está configurado para compilar y previsualizar) o con cualquier servidor estático. Variables como host y puerto del preview suelen ir en <code className="bg-gray-100 px-1 rounded text-sm">.env</code> (p. ej. <code className="bg-gray-100 px-1 rounded text-sm">PREVIEW_HOST</code>, <code className="bg-gray-100 px-1 rounded text-sm">PREVIEW_PORT</code>).
+              <strong>Front en desarrollo</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code>. Host y puerto del servidor Vite: <code className="bg-gray-100 px-1 rounded text-sm">DEV_HOST</code> y <code className="bg-gray-100 px-1 rounded text-sm">DEV_PORT</code> en el <code className="bg-gray-100 px-1 rounded text-sm">.env</code> de la raíz.
             </li>
             <li>
-              En entornos de servidor puedes usar un gestor de procesos (por ejemplo PM2) apuntando al comando de preview o al servidor estático que elijas.
+              <strong>Servir la SPA compilada</strong>: <code className="bg-gray-100 px-1 rounded text-sm">npm run build</code> genera <code className="bg-gray-100 px-1 rounded text-sm">dist/</code>; <code className="bg-gray-100 px-1 rounded text-sm">npm start</code> compila y ejecuta el servidor estático de Vite. Host y puerto: <code className="bg-gray-100 px-1 rounded text-sm">HOST</code> y <code className="bg-gray-100 px-1 rounded text-sm">PORT</code> en el mismo <code className="bg-gray-100 px-1 rounded text-sm">.env</code>. Opcional: <code className="bg-gray-100 px-1 rounded text-sm">ALLOWED_HOSTS</code>.
+            </li>
+            <li>
+              En servidor puedes usar PM2 u otro supervisor sobre el proceso del front y/o el del API Node.
             </li>
           </ul>
         </Section>

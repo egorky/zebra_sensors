@@ -6,18 +6,20 @@
 
 Al abrir la aplicación verás la pantalla de login.
 
-- **Con backend SQLite** (`VITE_BACKEND_URL` en el `.env` del front apuntando a la API Node en `server/`): usuario y contraseña se validan contra la base SQLite del servidor; recibes un **JWT** (sesión del orden de 24 h). El primer arranque del servidor puede crear un administrador con `BOOTSTRAP_ADMIN_*` en `server/.env` (véase el [README](../README.md) sección *Backend (SQLite)*).
-- **Sin backend** (sin `VITE_BACKEND_URL`): las credenciales coinciden con `VITE_APP_USERNAME` / `VITE_APP_PASSWORD` o la lista JSON `VITE_APP_USERS` del `.env` con el que se compiló la app (sesión en navegador ~1 h).
+- El front debe tener configurada **`VITE_BACKEND_URL`** apuntando al API Node (SQLite).
+- **Usuario** y **contraseña** se validan en la base SQLite del servidor; la sesión usa **JWT** (del orden de 24 h).
 
-Tras un inicio correcto accedes al panel principal.
+### Primer administrador
 
-### Usuarios (solo administrador, con backend)
+Si la base de datos del servidor no tenía usuarios, el primer arranque crea un administrador según `BOOTSTRAP_ADMIN_*` en `server/.env` (por defecto **usuario `admin`**, **contraseña `changeme`**). Debes **cambiar esa contraseña** en la pantalla inicial antes de usar el resto de la aplicación. Detalle: [backend_sqlite.md](backend_sqlite.md).
 
-Si el backend está activo, el menú **Usuarios** permite crear y eliminar cuentas en SQLite (roles `admin` y `operator`). Sin `VITE_BACKEND_URL` ese menú no aplica: los accesos van solo por variables `VITE_APP_*` y hay que recompilar para cambiar usuarios.
+### Usuarios (administrador)
+
+Menú **Usuarios**: crear y eliminar cuentas (roles `admin` y `operator`).
 
 ### Cerrar sesión
 
-En la parte inferior del menú lateral, **Cerrar sesión** te devuelve a la pantalla de login.
+En la parte inferior del menú lateral, **Cerrar sesión** te devuelve al login.
 
 ## 2. Inicio (panel principal)
 
@@ -40,7 +42,7 @@ Más detalle en [api_configuration.md](api_configuration.md).
 - **Paginación** — tamaño de página y botones anterior/siguiente; se muestra el total según la API.
 - **Última temperatura** — si aparece como no válida (~327,67 °C), el sensor puede estar saliendo de reposo; es el comportamiento descrito por Zebra.
 - **Refrescar**, **Enrolar**, **Desenrolar** como antes.
-- **Copia en servidor (opcional):** con backend configurado, cada vez que un **administrador** carga la lista desde Zebra, la app envía en segundo plano un volcado a SQLite (`sensor_snapshots`) como respaldo del último listado visto (no sustituye a Zebra).
+- **Copia en servidor:** cada vez que un **administrador** carga la lista desde Zebra, la app puede enviar un snapshot a SQLite (`sensor_snapshots`) como respaldo del último listado visto.
 
 ## 5. Tareas
 
@@ -52,13 +54,14 @@ Más detalle en [api_configuration.md](api_configuration.md).
   - **Añadir activo** — cuerpo según API (`asset`, `id_format`).
   - **Asociar sensor**, **Detener tarea**.
 
-- **Copia en servidor (opcional):** con backend y usuario administrador, al cargar la lista de tareas desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).
+- **Copia en servidor:** con usuario administrador, al cargar la lista desde Zebra se sincroniza un snapshot en SQLite (`task_snapshots`).
 
 ## 6. Ejecución
 
-- Desarrollo del front: `npm run dev`.
-- API con SQLite (opcional): `npm run server:dev` desde la raíz del repo (tras `npm run server:install`). Detalle en el [README](../README.md).
-- Producción: `npm start` (compila y sirve `dist/`); opcionalmente **PM2** — véase el [README](../README.md). Para solo servir sin recompilar: `npm run preview` si ya existe `dist/`.
+- **API:** `npm run server:dev` desde la raíz (tras `npm run server:install`). Ver [README](../README.md) y [backend_sqlite.md](backend_sqlite.md).
+- **Front en desarrollo:** `npm run dev` — variables `DEV_HOST` / `DEV_PORT` en el `.env` de la raíz.
+- **Servir la SPA compilada:** `npm run build` y `npm start` o `npm run preview` — variables `HOST` / `PORT` (y opcional `ALLOWED_HOSTS`) en el mismo `.env`.
+- Producción / **PM2:** véase el [README](../README.md).
 
 ## 7. Documentación Zebra
 
