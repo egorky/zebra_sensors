@@ -6,6 +6,7 @@ import Home from './components/ui/Home';
 import Configuration from './components/config/Configuration';
 import Sensors from './components/sensors/Sensors';
 import Tasks from './components/tasks/Tasks';
+import Help from './components/ui/Help';
 import Login from './components/auth/Login';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -53,6 +54,7 @@ function App() {
             <Route path="/config" element={<Configuration />} />
             <Route path="/sensors" element={<Sensors />} />
             <Route path="/tasks" element={<Tasks />} />
+            <Route path="/ayuda" element={<Help />} />
           </Route>
         </Routes>
       </Router>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Settings, Radio, ClipboardList, Home, LogOut } from 'lucide-react';
+import { Settings, Radio, ClipboardList, Home, LogOut, HelpCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getConfig, CONFIG_UPDATED_EVENT } from '../../services/api';
 
@@ -22,6 +22,7 @@ const Layout = ({ children }) => {
     { path: '/config', icon: Settings, label: 'Configuración', description: 'API Key y Base URL' },
     { path: '/sensors', icon: Radio, label: 'Sensores', description: 'Gestionar sensores' },
     { path: '/tasks', icon: ClipboardList, label: 'Tareas', description: 'Gestionar tareas' },
+    { path: '/ayuda', icon: HelpCircle, label: 'Ayuda', description: 'Guía de uso' },
   ];
 
   const isActive = (path) => location.pathname === path;
