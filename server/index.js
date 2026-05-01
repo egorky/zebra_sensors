@@ -92,5 +92,9 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, HOST, () => {
   const mode = isProd ? 'producción (dist/)' : 'desarrollo (Vite)';
-  console.log(`[app] http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT} — ${mode}`);
+  // No sustituir 0.0.0.0 por localhost: en ese caso Express escucha en todas las interfaces.
+  console.log(`[app] escuchando en http://${HOST}:${PORT} — ${mode}`);
+  if (HOST === '0.0.0.0' || HOST === '::') {
+    console.log(`[app] accesible desde la red en http://<ip-de-este-servidor>:${PORT} (y en http://127.0.0.1:${PORT} en local)`);
+  }
 });
