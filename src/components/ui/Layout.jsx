@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Settings, Radio, ClipboardList, Home, LogOut, HelpCircle, UserCog, CloudUpload } from 'lucide-react';
+import { Settings, Radio, ClipboardList, Home, LogOut, HelpCircle, UserCog, UploadCloud } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getConfig, CONFIG_UPDATED_EVENT } from '../../services/api';
 
@@ -23,7 +23,7 @@ const Layout = ({ children }) => {
     { path: '/users', icon: UserCog, label: 'Usuarios', description: 'Base en el servidor', adminOnly: true },
     {
       path: '/integrations',
-      icon: CloudUpload,
+      icon: UploadCloud,
       label: 'Zabbix / polling',
       description: 'Zebra → Zabbix (API)',
       adminOnly: true,
