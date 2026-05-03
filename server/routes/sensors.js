@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireAdmin } from '../middleware/auth.js';
+import { asyncRoute } from '../utils/asyncRoute.js';
+import { sqlNow } from '../database/schema.js';
 
 function mapSensor(s) {
   const id = s.id != null ? String(s.id) : '';
@@ -20,57 +21,96 @@ function mapSensor(s) {
 export function createSensorsRouter(db) {
   const r = Router();
 
-  r.get('/cached', (_req, res) => {
-    const rows = db
-      .prepare(
+  r.get(
+    '/cached',
+    asyncRoute(async (_req, res) => {
+      const order =
+        db.dialect === 'mysql'
+          ? 'ORDER BY name ASC'
+          : 'ORDER BY name COLLATE NOCASE';
+      const rows = await db.all(
         `SELECT zebra_id, serial_number, name, status, battery_level, last_temperature, raw_json, updated_at
-         FROM sensor_snapshots ORDER BY name COLLATE NOCASE`
-      )
-      .all();
-    const sensors = rows.map((row) => ({
-      ...row,
-      parsed: (() => {
-        try {
-          return JSON.parse(row.raw_json);
-        } catch {
-          return null;
-        }
-      })(),
-    }));
-    res.json({ sensors });
-  });
+         FROM sensor_snapshots ${order}`
+      );
+      const sensors = rows.map((row) => ({
+        ...row,
+        parsed: (() => {
+          try {
+            return JSON.parse(row.raw_json);
+          } catch {
+            return null;
+          }
+        })(),
+      }));
+      res.json({ sensors });
+    })
+  );
 
-  r.post('/sync', requireAdmin, (req, res) => {
-    const list = req.body?.sensors;
-    if (!Array.isArray(list)) {
-      return res.status(400).json({ error: 'Body debe incluir sensors: []' });
-    }
-    const upsert = db.prepare(`
-      INSERT INTO sensor_snapshots (zebra_id, serial_number, name, status, battery_level, last_temperature, raw_json, updated_at)
-      VALUES (@zebra_id, @serial_number, @name, @status, @battery_level, @last_temperature, @raw_json, datetime('now'))
-      ON CONFLICT(zebra_id) DO UPDATE SET
-        serial_number = excluded.serial_number,
-        name = excluded.name,
-        status = excluded.status,
-        battery_level = excluded.battery_level,
-        last_temperature = excluded.last_temperature,
-        raw_json = excluded.raw_json,
-        updated_at = datetime('now')
-    `);
-    const run = db.transaction((items) => {
+  r.post(
+    '/sync',
+    asyncRoute(async (req, res) => {
+      const list = req.body?.sensors;
+      if (!Array.isArray(list)) {
+        return res.status(400).json({ error: 'Body debe incluir sensors: []' });
+      }
+      const nowF = sqlNow(db);
       let n = 0;
-      for (const s of items) {
-        const row = mapSensor(s);
-        if (row) {
-          upsert.run(row);
-          n += 1;
+      if (db.dialect === 'mysql') {
+        const sql = `INSERT INTO sensor_snapshots (zebra_id, serial_number, name, status, battery_level, last_temperature, raw_json, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ${nowF})
+          ON DUPLICATE KEY UPDATE
+            serial_number = VALUES(serial_number),
+            name = VALUES(name),
+            status = VALUES(status),
+            battery_level = VALUES(battery_level),
+            last_temperature = VALUES(last_temperature),
+            raw_json = VALUES(raw_json),
+            updated_at = VALUES(updated_at)`;
+        for (const s of list) {
+          const row = mapSensor(s);
+          if (row) {
+            await db.run(sql, [
+              row.zebra_id,
+              row.serial_number,
+              row.name,
+              row.status,
+              row.battery_level,
+              row.last_temperature,
+              row.raw_json,
+            ]);
+            n += 1;
+          }
+        }
+      } else {
+        const sql = `INSERT INTO sensor_snapshots (zebra_id, serial_number, name, status, battery_level, last_temperature, raw_json, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ${nowF})
+          ON CONFLICT(zebra_id) DO UPDATE SET
+            serial_number = excluded.serial_number,
+            name = excluded.name,
+            status = excluded.status,
+            battery_level = excluded.battery_level,
+            last_temperature = excluded.last_temperature,
+            raw_json = excluded.raw_json,
+            updated_at = excluded.updated_at`;
+        for (const s of list) {
+          const row = mapSensor(s);
+          if (row) {
+            await db.run(sql, [
+              row.zebra_id,
+              row.serial_number,
+              row.name,
+              row.status,
+              row.battery_level,
+              row.last_temperature,
+              row.raw_json,
+            ]);
+            n += 1;
+          }
         }
       }
-      return n;
-    });
-    const count = run(list);
-    res.json({ synced: count });
-  });
+      res.json({ synced: n });
+    })
+  );
 
   return r;
 }

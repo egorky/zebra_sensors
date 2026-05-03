@@ -115,3 +115,46 @@ export async function fetchCachedSensors() {
 export async function fetchCachedTasks() {
   return backendFetch('/api/tasks/cached');
 }
+
+export async function fetchIntegrationSettings() {
+  return backendFetch('/api/integration/zabbix-poller');
+}
+
+export async function updateIntegrationSettings(payload) {
+  return backendFetch('/api/integration/zabbix-poller', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function testZabbixIntegration(body) {
+  return backendFetch('/api/integration/zabbix-poller/test-zabbix', {
+    method: 'POST',
+    body: JSON.stringify(body || {}),
+  });
+}
+
+export async function runPollerNow() {
+  return backendFetch('/api/integration/zabbix-poller/run-now', { method: 'POST' });
+}
+
+export async function fetchPollerSensorState(taskId) {
+  const q = new URLSearchParams({ task_id: taskId });
+  return backendFetch(`/api/integration/zabbix-poller/sensor-state?${q}`);
+}
+
+export async function fetchPollerSensorPolicies(taskId) {
+  const q = new URLSearchParams({ task_id: taskId });
+  return backendFetch(`/api/integration/zabbix-poller/sensor-policies?${q}`);
+}
+
+export async function savePollerSensorPolicies(taskId, policies) {
+  return backendFetch('/api/integration/zabbix-poller/sensor-policies', {
+    method: 'PUT',
+    body: JSON.stringify({ task_id: taskId, policies }),
+  });
+}
+
+export async function fetchPollerRuns() {
+  return backendFetch('/api/integration/zabbix-poller/runs');
+}

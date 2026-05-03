@@ -8,6 +8,7 @@ import Sensors from './components/sensors/Sensors';
 import Tasks from './components/tasks/Tasks';
 import Help from './components/ui/Help';
 import Users from './components/users/Users';
+import Integrations from './components/config/Integrations';
 import Login from './components/auth/Login';
 import ChangePassword from './components/auth/ChangePassword';
 import { AuthProvider } from './context/AuthContext';
@@ -60,6 +61,14 @@ function App() {
               element={
                 <AdminRoute>
                   <Users />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/integrations"
+              element={
+                <AdminRoute>
+                  <Integrations />
                 </AdminRoute>
               }
             />

@@ -3,13 +3,16 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
-import { openDatabase, ensureBootstrapUser } from './db.js';
+import { createDatabase, ensureBootstrapUser } from './database/index.js';
 import { createAuthMiddleware, requireAdmin } from './middleware/auth.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createUsersRouter } from './routes/users.js';
 import { createSensorsRouter } from './routes/sensors.js';
 import { createTasksRouter } from './routes/tasks.js';
+import { createIntegrationRouter } from './routes/integration.js';
 import { changePasswordHandler } from './routes/changePassword.js';
+import { asyncRoute } from './utils/asyncRoute.js';
+import { startZebraZabbixPoller } from './services/zebraZabbixPoller.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -19,15 +22,16 @@ const PORT =
 const HOST = process.env.HOST ?? '0.0.0.0';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const DATABASE_PATH = process.env.DATABASE_PATH || './server/data/app.db';
 
 if (!JWT_SECRET || JWT_SECRET.length < 16) {
   console.error('Falta JWT_SECRET en el .env de la raíz (mínimo 16 caracteres).');
   process.exit(1);
 }
 
-const db = openDatabase(DATABASE_PATH);
-ensureBootstrapUser(db);
+const db = await createDatabase();
+await ensureBootstrapUser(db);
+
+const pollerCtl = startZebraZabbixPoller(db);
 
 const requireAuth = createAuthMiddleware(JWT_SECRET);
 const app = express();
@@ -46,15 +50,19 @@ app.get('/health', (_req, res) => {
 const authRouter = createAuthRouter(db, JWT_SECRET);
 app.use('/api/auth', authRouter);
 
-app.get('/api/auth/me', requireAuth, (req, res) => {
-  const row = db.prepare('SELECT must_change_password FROM users WHERE id = ?').get(req.user.id);
-  res.json({
-    user: {
-      ...req.user,
-      mustChangePassword: row ? row.must_change_password === 1 : false,
-    },
-  });
-});
+app.get(
+  '/api/auth/me',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const row = await db.get('SELECT must_change_password FROM users WHERE id = ?', [req.user.id]);
+    res.json({
+      user: {
+        ...req.user,
+        mustChangePassword: row ? row.must_change_password === 1 || row.must_change_password === true : false,
+      },
+    });
+  })
+);
 
 app.post('/api/auth/change-password', requireAuth, changePasswordHandler(db, JWT_SECRET));
 
@@ -66,6 +74,9 @@ app.use('/api/sensors', requireAuth, sensorsRouter);
 
 const tasksRouter = createTasksRouter(db);
 app.use('/api/tasks', requireAuth, tasksRouter);
+
+const integrationRouter = createIntegrationRouter(db, pollerCtl);
+app.use('/api/integration', requireAuth, requireAdmin, integrationRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'No encontrado' });
@@ -108,7 +119,6 @@ const modeLabel = isProd ? 'producción (dist/)' : 'desarrollo (Vite)';
 const server = http.createServer(app);
 
 if (wrapIpv4) {
-  // IPv4 + IPv6 en la mayoría de kernels (mejor que solo 0.0.0.0 si el cliente usa IPv6).
   server.once('error', (err) => {
     if (err.code === 'EADDRNOTAVAIL' || err.code === 'EAFNOSUPPORT' || err.code === 'EINVAL') {
       const s2 = http.createServer(app);

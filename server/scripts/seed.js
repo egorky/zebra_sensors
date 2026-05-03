@@ -6,13 +6,12 @@ import '../loadRootEnv.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
-import { openDatabase } from '../db.js';
+import { createDatabase } from '../database/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 process.chdir(repoRoot);
 
-const dbPath = process.env.DATABASE_PATH || './server/data/app.db';
 const [, , username, password, roleArg] = process.argv;
 if (!username || !password) {
   console.error('Uso (desde la raíz): npm run seed -- <usuario> <contraseña> [admin|operator]');
@@ -20,21 +19,21 @@ if (!username || !password) {
 }
 const role = roleArg === 'operator' ? 'operator' : 'admin';
 
-const db = openDatabase(dbPath);
+const db = await createDatabase();
 const hash = bcrypt.hashSync(password, 10);
 try {
-  db.prepare(`INSERT INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, ?, 0)`).run(
+  await db.run(`INSERT INTO users (username, password_hash, role, must_change_password) VALUES (?, ?, ?, 0)`, [
     username,
     hash,
-    role
-  );
+    role,
+  ]);
   console.log(`Usuario "${username}" creado (${role}).`);
 } catch (e) {
-  if (String(e.message).includes('UNIQUE')) {
+  if (String(e.message).includes('UNIQUE') || String(e.message).includes('Duplicate')) {
     console.error('Ese usuario ya existe.');
   } else {
     console.error(e);
   }
   process.exit(1);
 }
-db.close();
+await db.close();
