@@ -1,9 +1,34 @@
 /**
  * Zabbix JSON-RPC (api_jsonrpc.php). Usa history.push (Zabbix 7+) en lugar de zabbix_sender.
- * Tokens de API (Zabbix 5.4+): cabecera Authorization: Bearer; no usar el campo JSON "auth"
- * (ese campo es para el sessionid corto de user.login; un token largo provoca "sessionid value is too long").
+ *
+ * Autenticación:
+ * - Zabbix 6.0.x: el PHP pasa `$call['auth']` del cuerpo JSON a la API (no usa solo Bearer en muchas instalaciones).
+ * - Versiones más nuevas: también aceptan `Authorization: Bearer <token>`.
+ * Para tokens enviamos Bearer y el mismo valor en `auth` del JSON (compatibilidad 6.0 + recientes).
+ *
+ * Depuración: define `ZABBIX_RPC_DEBUG=1` (o `true`) en el entorno del proceso Node para registrar en consola
+ * URL, método, modo de auth y respuestas de error (sin volcar el token completo).
+ *
  * @see https://www.zabbix.com/documentation/current/en/manual/api
  */
+
+function zabbixRpcDebugEnabled() {
+  const v = String(process.env.ZABBIX_RPC_DEBUG || '').trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
+function maskSecret(s) {
+  const t = String(s || '');
+  if (!t) return '(vacío)';
+  if (t.length <= 8) return `(${t.length} caracteres)`;
+  return `${t.length} chars …${t.slice(-4)}`;
+}
+
+function logZabbixRpcDebug(label, data) {
+  if (!zabbixRpcDebugEnabled()) return;
+  const line = typeof data === 'string' ? data : JSON.stringify(data);
+  console.log(`[zabbix-rpc] ${label} ${line}`);
+}
 
 export function normalizeZabbixApiUrl(input) {
   const raw = String(input || '').trim().replace(/\/+$/, '');
@@ -24,7 +49,7 @@ function cacheKey(url, username) {
 
 /**
  * @param {string} apiUrl
- * @param {object} payload - cuerpo JSON-RPC (sin auth en cuerpo si usas token; buildJsonRpcBody lo añade solo para sesión)
+ * @param {object} payload - cuerpo JSON-RPC
  * @param {{ kind: 'token'|'session', value: string }|null|undefined} zabbixAuth
  */
 export async function zabbixJsonRpc(apiUrl, payload, zabbixAuth) {
@@ -32,6 +57,28 @@ export async function zabbixJsonRpc(apiUrl, payload, zabbixAuth) {
   if (zabbixAuth?.kind === 'token' && zabbixAuth.value) {
     headers.Authorization = `Bearer ${zabbixAuth.value}`;
   }
+  const method = payload?.method || '?';
+  const authDesc =
+    zabbixAuth?.kind === 'token'
+      ? `token Bearer+JSON.auth token=${maskSecret(zabbixAuth.value)}`
+      : zabbixAuth?.kind === 'session'
+        ? `session JSON.auth session=${maskSecret(zabbixAuth.value)}`
+        : 'sin auth en cabecera';
+  logZabbixRpcDebug('request', {
+    url: apiUrl,
+    method,
+    auth: authDesc,
+    bodyPreview: (() => {
+      try {
+        const clone = JSON.parse(JSON.stringify(payload));
+        if (clone.auth != null && clone.auth !== '') clone.auth = '[REDACTED]';
+        return clone;
+      } catch {
+        return '(no serializable)';
+      }
+    })(),
+  });
+
   const r = await fetch(apiUrl, {
     method: 'POST',
     headers,
@@ -42,13 +89,24 @@ export async function zabbixJsonRpc(apiUrl, payload, zabbixAuth) {
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
+    logZabbixRpcDebug('parse_error', { httpStatus: r.status, textHead: String(text).slice(0, 400) });
     throw new Error(`Zabbix: respuesta no JSON (${r.status})`);
   }
   if (json.error) {
     const msg = json.error?.data || json.error?.message || JSON.stringify(json.error);
+    logZabbixRpcDebug('jsonrpc_error', {
+      httpStatus: r.status,
+      method,
+      code: json.error?.code,
+      message: json.error?.message,
+      data: json.error?.data,
+    });
     const err = new Error(String(msg));
     err.code = json.error?.code;
     throw err;
+  }
+  if (zabbixRpcDebugEnabled()) {
+    logZabbixRpcDebug('ok', { httpStatus: r.status, method, hasResult: json.result !== undefined });
   }
   return json.result;
 }
@@ -97,7 +155,9 @@ export function buildJsonRpcBody(method, params, zabbixAuth) {
     params,
     id: Math.floor(Math.random() * 1e9),
   };
-  if (zabbixAuth?.kind === 'session' && zabbixAuth.value) {
+  // Zabbix 6.0.x JSON-RPC usa el campo `auth` del cuerpo (token de API o sesión user.login).
+  // La cabecera Bearer la añade zabbixJsonRpc para instalaciones que también la lean.
+  if (zabbixAuth?.value && (zabbixAuth.kind === 'session' || zabbixAuth.kind === 'token')) {
     body.auth = zabbixAuth.value;
   }
   return body;
