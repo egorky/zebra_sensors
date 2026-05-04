@@ -97,8 +97,7 @@ const TaskDetailsZabbixPoll = ({ taskId }) => {
     <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/40 space-y-4">
       <h4 className="font-semibold text-gray-900">Zabbix y polling del log de esta tarea</h4>
       <p className="text-sm text-gray-600">
-        La URL de Zabbix, la API key de Zebra y el resto de parámetros globales están en{' '}
-        <strong>Integración Zabbix y polling Zebra</strong>. Aquí activas si <em>esta</em> tarea debe incluirse en el ciclo del servidor y qué sensores envían datos a Zabbix. El identificador de la tarea es el de la lista sincronizada; no hace falta copiarlo manualmente.
+        La URL y credenciales de <strong>Zabbix</strong> y el intervalo global están en <strong>Integración Zabbix y polling Zebra</strong>. La <strong>Base URL</strong> y <strong>API Key</strong> de Zebra están en <strong>Configuración</strong> (misma fuente que el resto de la app). Aquí activas si <em>esta</em> tarea entra en el ciclo del servidor y qué sensores envían datos a Zabbix.
       </p>
       {err ? <p className="text-sm text-red-600">{err}</p> : null}
       {msg ? <p className="text-sm text-green-700">{msg}</p> : null}

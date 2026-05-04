@@ -32,7 +32,7 @@ function buildQuery(obj) {
   return s ? `?${s}` : '';
 }
 
-function trimTrailingSlash(url) {
+export function trimTrailingSlash(url) {
   return String(url || '').replace(/\/+$/, '');
 }
 

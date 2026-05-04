@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { saveConfig, getConfig, clearSavedConfig } from '../../services/api';
+import { saveConfig, getConfig, clearSavedConfig, trimTrailingSlash } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { readBackendAuthFromStorage, updateIntegrationSettings } from '../../services/backendApi';
 
 const MAX_BRANDING_BYTES = 400 * 1024;
 
@@ -12,6 +14,7 @@ const fileToDataUrl = (file) =>
   });
 
 const Configuration = () => {
+  const { isAdmin } = useAuth();
   const [config, setConfig] = useState({
     baseUrl: '',
     apikey: '',
@@ -47,14 +50,30 @@ const Configuration = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (saveConfig(config)) {
-      setMessage('¡Configuración guardada con éxito!');
-      setTimeout(() => setMessage(''), 3000);
-    } else {
+    if (!saveConfig(config)) {
       setMessage('Error al guardar la configuración.');
+      return;
     }
+    let msg = '¡Configuración guardada con éxito!';
+    if (isAdmin && readBackendAuthFromStorage()?.token) {
+      try {
+        const base = trimTrailingSlash(config.baseUrl || '').trim();
+        const key = String(config.apikey || '').trim();
+        const body = {};
+        if (base) body.zebra_base_url = base;
+        if (key) body.zebra_api_key = key;
+        if (Object.keys(body).length) {
+          await updateIntegrationSettings(body);
+          msg += ' Copiado al servidor para el poller Zabbix.';
+        }
+      } catch (err) {
+        msg += ` No se pudo actualizar el servidor (poller): ${String(err.message || err)}`;
+      }
+    }
+    setMessage(msg);
+    setTimeout(() => setMessage(''), 5000);
   };
 
   const handleClearSaved = () => {
@@ -83,6 +102,12 @@ const Configuration = () => {
           proyecto (<code className="bg-gray-100 px-1 rounded">VITE_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded">VITE_API_KEY</code>) como
           valores por defecto. Los campos de abajo son <strong>opcionales</strong>: si los guardas, sustituyen a los del <code className="bg-gray-100 px-1 rounded">.env</code> solo en este navegador (útil para pruebas o varios entornos).
         </p>
+        {isAdmin ? (
+          <p className="text-sm text-blue-900 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+            Como <strong>administrador</strong>, al guardar aquí también se actualizan en el servidor los mismos valores para el <strong>poller Zabbix</strong> (integración en segundo plano). En el servidor puedes anularlos con <code className="bg-blue-100 px-1 rounded text-xs">ZEBRA_API_BASE_URL</code> y{' '}
+            <code className="bg-blue-100 px-1 rounded text-xs">ZEBRA_API_KEY</code> en el entorno del proceso Node.
+          </p>
+        ) : null}
         <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2">
           La guía de Zebra indica que la autenticación solo con cabecera <code className="bg-amber-100 px-1 rounded">apikey</code> es adecuada sobre todo para pruebas y PoC; en producción suele valorarse OAuth u otros flujos descritos en su documentación.
         </p>

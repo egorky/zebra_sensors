@@ -9,6 +9,21 @@ function trimBase(url) {
   return String(url || '').replace(/\/+$/, '');
 }
 
+/** Prioridad: env del proceso Node (despliegue) → BD (sincronizado desde Configuración) → defecto. */
+export function resolveZebraBaseUrlFromSettings(settings) {
+  const env = String(process.env.ZEBRA_API_BASE_URL || '').trim();
+  if (env) return trimBase(env);
+  const db = String(settings?.zebra_base_url || '').trim();
+  return db ? trimBase(db) : 'https://api.zebra.com/v2';
+}
+
+/** Prioridad: env del proceso Node → BD. */
+export function resolveZebraApiKeyFromSettings(settings) {
+  const env = String(process.env.ZEBRA_API_KEY || '').trim();
+  if (env) return env;
+  return String(settings?.zebra_api_key || '').trim();
+}
+
 function taskLogPath(baseUrl, taskId, query) {
   const base = trimBase(baseUrl);
   const id = encodeURIComponent(taskId);
@@ -99,8 +114,8 @@ async function insertPollRun(db, taskId, nowSql) {
 }
 
 async function runPollForSingleTask(db, settings, taskId, manual) {
-  const zebraKey = String(settings.zebra_api_key || '').trim();
-  const zebraBase = String(settings.zebra_base_url || '').trim() || 'https://api.zebra.com/v2';
+  const zebraKey = resolveZebraApiKeyFromSettings(settings);
+  const zebraBase = resolveZebraBaseUrlFromSettings(settings);
   const zabbixUrl = String(settings.zabbix_api_url || '').trim();
   const authType = settings.zabbix_auth_type === 'password' ? 'password' : 'token';
   const apiUrl = normalizeZabbixApiUrl(zabbixUrl);
@@ -235,10 +250,11 @@ export async function runZebraZabbixPollOnce(db, { manual = false, singleTaskId 
   if (!settings) return { skipped: true, reason: 'no_settings' };
   if (!manual && !Number(settings.poller_enabled)) return { skipped: true, reason: 'disabled' };
 
-  const zebraKey = String(settings.zebra_api_key || '').trim();
+  const zebraKey = resolveZebraApiKeyFromSettings(settings);
   const zabbixUrl = String(settings.zabbix_api_url || '').trim();
   if (!zebraKey) {
-    const msg = 'Falta la API key de Zebra en Integración Zabbix / polling';
+    const msg =
+      'Falta la API key de Zebra: guárdala en Configuración (como admin se sincroniza con el servidor) o define ZEBRA_API_KEY en el entorno del proceso Node.';
     await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
     return { ok: false, error: msg };
   }

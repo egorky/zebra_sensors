@@ -29,8 +29,6 @@ const Integrations = () => {
   const [form, setForm] = useState({
     poller_enabled: false,
     poll_interval_minutes: 6,
-    zebra_base_url: 'https://api.zebra.com/v2',
-    zebra_api_key: '',
     zabbix_api_url: '',
     zabbix_auth_type: 'token',
     zabbix_api_token: '',
@@ -43,18 +41,21 @@ const Integrations = () => {
   });
   const [meta, setMeta] = useState({ last_poll_at: null, last_poll_error: null });
   const [runs, setRuns] = useState([]);
+  const [zebraOnServer, setZebraOnServer] = useState({ baseUrl: '', hasKey: false });
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
       const { settings } = await fetchIntegrationSettings();
+      setZebraOnServer({
+        baseUrl: settings.zebra_base_url || '',
+        hasKey: !!settings.has_zebra_api_key,
+      });
       setForm((f) => ({
         ...f,
         poller_enabled: !!settings.poller_enabled,
         poll_interval_minutes: settings.poll_interval_minutes || 6,
-        zebra_base_url: settings.zebra_base_url || '',
-        zebra_api_key: '',
         zabbix_api_url: settings.zabbix_api_url || '',
         zabbix_auth_type: settings.zabbix_auth_type || 'token',
         zabbix_api_token: '',
@@ -102,7 +103,6 @@ const Integrations = () => {
       const payload = {
         poller_enabled: form.poller_enabled,
         poll_interval_minutes: Number(form.poll_interval_minutes) || 6,
-        zebra_base_url: form.zebra_base_url.trim(),
         zabbix_api_url: form.zabbix_api_url.trim(),
         zabbix_auth_type: form.zabbix_auth_type,
         zabbix_username: form.zabbix_username.trim(),
@@ -111,7 +111,6 @@ const Integrations = () => {
         initial_lookback_minutes: Number(form.initial_lookback_minutes) || 120,
         zabbix_hosts: textToHosts(form.zabbix_hosts_text),
       };
-      if (form.zebra_api_key.trim()) payload.zebra_api_key = form.zebra_api_key.trim();
       if (form.zabbix_api_token.trim()) payload.zabbix_api_token = form.zabbix_api_token.trim();
       if (form.zabbix_password.trim()) payload.zabbix_password = form.zabbix_password.trim();
 
@@ -179,6 +178,20 @@ const Integrations = () => {
         El polling automático corre en el mismo proceso Node.js que sirve Express: un temporizador (<code className="bg-gray-100 px-1 rounded">setInterval</code>) según el intervalo
         configurado aquí. No es un servicio del sistema aparte; al reiniciar el servidor el ciclo se reinicia con la configuración guardada.
       </p>
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800">
+        <p className="font-semibold mb-2">Conexión a la API de Zebra (poller)</p>
+        <p className="text-slate-700 mb-2">
+          La <strong>Base URL</strong> y la <strong>API Key</strong> de Zebra se definen en <strong>Configuración</strong>; al guardar ahí (como administrador) se copian al servidor para este
+          poller. Opcionalmente, en el entorno del proceso Node puedes fijar <code className="bg-white px-1 rounded text-xs">ZEBRA_API_BASE_URL</code> y{' '}
+          <code className="bg-white px-1 rounded text-xs">ZEBRA_API_KEY</code> (tienen prioridad sobre lo guardado en base de datos).
+        </p>
+        <ul className="list-disc pl-5 text-slate-700 space-y-1">
+          <li>
+            Base URL en servidor: <code className="bg-white px-1 rounded text-xs break-all">{zebraOnServer.baseUrl || '—'}</code>
+          </li>
+          <li>API Key en servidor: {zebraOnServer.hasKey ? 'Sí (valor oculto)' : 'No — guarda en Configuración o usa ZEBRA_API_KEY'}</li>
+        </ul>
+      </div>
       {error ? <p className="text-red-600 text-sm">{error}</p> : null}
       {message ? <p className="text-green-700 text-sm">{message}</p> : null}
 
@@ -215,34 +228,6 @@ const Integrations = () => {
             value={form.initial_lookback_minutes}
             onChange={onChange}
             className="border rounded w-full max-w-xs py-2 px-3"
-          />
-        </div>
-
-        <h2 className="text-lg font-semibold border-b pb-2">Zebra (servidor)</h2>
-        <p className="text-sm text-gray-600">
-          La API key se guarda en el servidor para el poller. Si dejas el campo vacío al guardar, se conserva la clave ya almacenada.
-        </p>
-        <div>
-          <label className="block text-gray-700 font-bold mb-1">Base URL Zebra</label>
-          <input
-            type="text"
-            name="zebra_base_url"
-            value={form.zebra_base_url}
-            onChange={onChange}
-            className="border rounded w-full py-2 px-3"
-            placeholder="https://api.zebra.com/v2"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-bold mb-1">API Key Zebra</label>
-          <input
-            type="password"
-            name="zebra_api_key"
-            value={form.zebra_api_key}
-            onChange={onChange}
-            className="border rounded w-full py-2 px-3"
-            placeholder="Dejar vacío para no cambiar la guardada"
-            autoComplete="off"
           />
         </div>
 
@@ -367,7 +352,7 @@ const Integrations = () => {
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-950">
         <p className="font-semibold mb-1">Tareas y sensores</p>
         <p>
-          Activa el polling por tarea y el envío por sensor en <strong>Tareas</strong> (detalle de cada tarea). Esta pantalla solo define credenciales, intervalo global y plantillas comunes.
+          Activa el polling por tarea y el envío por sensor en <strong>Tareas</strong> (detalle de cada tarea). Esta pantalla define Zabbix, intervalo global y plantillas; la API de Zebra viene de <strong>Configuración</strong> (o variables de entorno del servidor).
         </p>
       </div>
 
