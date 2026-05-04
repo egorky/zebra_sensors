@@ -26,8 +26,8 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4 py-8">
+      <div className="w-full max-w-md p-6 sm:p-8 space-y-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center text-gray-900">Login</h2>
         <p className="text-xs text-center text-gray-500">
           Autenticación contra el servidor (SQLite y JWT). Arranca la app con <code className="bg-gray-100 px-1 rounded">npm run dev</code> o <code className="bg-gray-100 px-1 rounded">npm start</code>.

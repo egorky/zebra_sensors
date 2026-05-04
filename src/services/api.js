@@ -9,9 +9,10 @@ export const notifyConfigUpdated = () => {
   }
 };
 
+/** Por defecto desde ZEBRA_API_BASE_URL / ZEBRA_API_KEY en .env (inyectadas en build; ver vite.config.js). */
 const defaultConfigFromEnv = () => ({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || '',
-  apikey: import.meta.env.VITE_API_KEY || '',
+  baseUrl: __ZEBRA_BUILD_BASE_URL__ || '',
+  apikey: __ZEBRA_BUILD_API_KEY__ || '',
   logoDataUrl: '',
   faviconDataUrl: '',
 });

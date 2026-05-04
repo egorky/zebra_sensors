@@ -66,7 +66,7 @@ const Configuration = () => {
         if (key) body.zebra_api_key = key;
         if (Object.keys(body).length) {
           await updateIntegrationSettings(body);
-          msg += ' Copiado al servidor para el poller Zabbix.';
+          msg += ' Sincronizado con el servidor.';
         }
       } catch (err) {
         msg += ` No se pudo actualizar el servidor (poller): ${String(err.message || err)}`;
@@ -79,7 +79,7 @@ const Configuration = () => {
   const handleClearSaved = () => {
     if (
       !window.confirm(
-        '¿Eliminar la configuración guardada en este navegador (URL, API key, logo y favicon)? Se usarán los valores del archivo .env si existen.'
+        '¿Eliminar la configuración guardada en este navegador (URL, API key, logo y favicon)? Tras compilar o reiniciar el dev server se aplicarán de nuevo los valores por defecto desde ZEBRA_* del .env.'
       )
     ) {
       return;
@@ -94,22 +94,13 @@ const Configuration = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Configuración de API</h1>
-      <div className="bg-white p-8 rounded-lg shadow-md space-y-8">
-        <p className="text-gray-600">
-          La <strong>Base URL</strong> y la <strong>API Key</strong> pueden definirse en el archivo <code className="bg-gray-100 px-1 rounded">.env</code> del
-          proyecto (<code className="bg-gray-100 px-1 rounded">VITE_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded">VITE_API_KEY</code>) como
-          valores por defecto. Los campos de abajo son <strong>opcionales</strong>: si los guardas, sustituyen a los del <code className="bg-gray-100 px-1 rounded">.env</code> solo en este navegador (útil para pruebas o varios entornos).
-        </p>
-        {isAdmin ? (
-          <p className="text-sm text-blue-900 bg-blue-50 border border-blue-200 rounded px-3 py-2">
-            Como <strong>administrador</strong>, al guardar aquí también se actualizan en el servidor los mismos valores para el <strong>poller Zabbix</strong> (integración en segundo plano). En el servidor puedes anularlos con <code className="bg-blue-100 px-1 rounded text-xs">ZEBRA_API_BASE_URL</code> y{' '}
-            <code className="bg-blue-100 px-1 rounded text-xs">ZEBRA_API_KEY</code> en el entorno del proceso Node.
-          </p>
-        ) : null}
-        <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-          La guía de Zebra indica que la autenticación solo con cabecera <code className="bg-amber-100 px-1 rounded">apikey</code> es adecuada sobre todo para pruebas y PoC; en producción suele valorarse OAuth u otros flujos descritos en su documentación.
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Configuración de API</h1>
+      <div className="bg-white p-4 sm:p-8 rounded-lg shadow-md space-y-6 sm:space-y-8">
+        <p className="text-gray-600 text-sm sm:text-base">
+          Los valores por defecto de <strong>Base URL</strong> y <strong>API Key</strong> salen del archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> en la raíz del
+          proyecto (<code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_KEY</code>) y se inyectan al
+          compilar el cliente. Los campos de abajo son <strong>opcionales</strong>: si los guardas, sustituyen esos valores solo en este navegador.
         </p>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

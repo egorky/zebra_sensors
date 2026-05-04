@@ -26,13 +26,13 @@ El botón **Limpiar configuración guardada** elimina del navegador la URL, la A
 2. Ajusta al menos:
 
 ```dotenv
-VITE_API_BASE_URL=https://api.zebra.com/v2
-VITE_API_KEY=tu_api_key_aqui
+ZEBRA_API_BASE_URL=https://api.zebra.com/v2
+ZEBRA_API_KEY=tu_api_key_aqui
 # Opcional: solo si el front no está en el mismo host/puerto que el API.
 # VITE_BACKEND_URL=
 ```
 
-Un solo proceso usa **`HOST`** y **`PORT`** para la web y el API. Variables **`VITE_*`** se inyectan en el cliente en tiempo de compilación; si cambias `.env`, reinicia `npm run dev` o vuelve a ejecutar `npm run build`.
+Un solo proceso usa **`HOST`** y **`PORT`** para la web y el API. **`ZEBRA_API_BASE_URL`** y **`ZEBRA_API_KEY`** se leen en el servidor y se inyectan en el cliente al compilar (`vite.config.js`); si cambias `.env`, reinicia `npm run dev` o vuelve a ejecutar `npm run build`.
 
 Variables del **servidor** en el **`.env` de la raíz**: `JWT_SECRET`, `DATABASE_PATH`, `BOOTSTRAP_*`, etc. Guía: [backend_sqlite.md](backend_sqlite.md).
 

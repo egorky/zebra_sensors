@@ -24,7 +24,7 @@ Menú **Usuarios**: crear y eliminar cuentas de acceso a la app (roles `admin` y
 
 ### Cerrar sesión
 
-En la parte inferior del menú lateral, **Cerrar sesión** te devuelve al login.
+En la parte inferior del menú (lateral en escritorio o panel en móvil), **Cerrar sesión** te devuelve al login.
 
 ## 2. Inicio (panel principal)
 
@@ -34,7 +34,7 @@ Sobre webhooks vs polling, véase [webhooks.md](webhooks.md) (no forma parte de 
 
 ## 3. Configuración
 
-- Los valores por defecto de **Base URL** y **API Key** vienen del `.env` (`VITE_API_*`). Opcionalmente puedes guardar otros valores en el navegador desde esta pantalla.
+- Los valores por defecto de **Base URL** y **API Key** vienen del `.env` (`ZEBRA_API_BASE_URL`, `ZEBRA_API_KEY`). Opcionalmente puedes guardar otros valores en el navegador desde esta pantalla.
 - **Logo** y **Favicon** (opcional) — archivos locales guardados solo en este navegador.
 - **Guardar configuración** / **Limpiar configuración guardada**.
 

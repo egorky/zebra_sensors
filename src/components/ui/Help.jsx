@@ -10,13 +10,14 @@ const Section = ({ id, title, children }) => (
 const Help = () => {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Ayuda</h1>
-      <p className="text-gray-600 mb-8">
-        Guía de uso de esta aplicación. Los nombres de menús coinciden con la barra lateral. Para la URL de la API de Zebra y la clave de aplicación, usa{' '}
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Ayuda</h1>
+      <p className="text-gray-600 mb-8 text-sm sm:text-base">
+        Guía de uso de esta aplicación. En pantallas pequeñas el menú se abre con el icono de <strong>menú</strong> arriba a la izquierda; en escritorio sigue visible a la izquierda. Para la URL de la API de Zebra y la clave, usa{' '}
         <Link to="/config" className="text-blue-600 underline font-medium">
           Configuración
         </Link>{' '}
-        o define valores por defecto en el archivo <code className="bg-gray-100 px-1 rounded text-sm">.env</code> del despliegue (<code className="bg-gray-100 px-1 rounded text-sm">VITE_API_BASE_URL</code>, <code className="bg-gray-100 px-1 rounded text-sm">VITE_API_KEY</code>). En el navegador, lo guardado desde la interfaz sustituye a esos valores por defecto.
+        o define por defecto <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_BASE_URL</code> y <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_KEY</code> en el{' '}
+        <code className="bg-gray-100 px-1 rounded text-sm">.env</code> (se inyectan al compilar). Lo guardado en el navegador sustituye a esos valores por defecto.
       </p>
 
       <nav className="mb-10 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
@@ -158,26 +159,26 @@ const Help = () => {
             En la pantalla de login introduce usuario y contraseña. La sesión (JWT) dura del orden de <strong>24 horas</strong>; cuando caduque, vuelve a identificarte.
           </p>
           <p>
-            <strong>Cerrar sesión</strong>: botón al pie del menú lateral. En la barra lateral también se muestra tu rol (Administrador u Operador) y, si está disponible, tu nombre de usuario.
+            <strong>Cerrar sesión</strong>: botón al pie del menú. En el menú lateral (o el panel deslizante en móvil) también se muestra tu rol (Administrador u Operador) y, si está disponible, tu nombre de usuario.
           </p>
         </Section>
 
         <Section id="requisitos" title="Requisitos y configuración (API y apariencia)">
           <p>
-            Cualquier usuario autenticado puede abrir <Link to="/config" className="text-blue-600 underline">Configuración</Link> para cambiar la URL y la clave de Zebra (y el branding) en este navegador; si no guardas nada, se usan los valores del <code className="bg-gray-100 px-1 rounded text-sm">.env</code> con el que se compiló la app.
+            Cualquier usuario autenticado puede abrir <Link to="/config" className="text-blue-600 underline">Configuración</Link> para cambiar la URL y la clave de Zebra (y el branding) en este navegador; si no guardas nada, se usan los valores de <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_BASE_URL</code> y <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_KEY</code> del <code className="bg-gray-100 px-1 rounded text-sm">.env</code> con el que se compiló la app.
           </p>
           <p>
             La clave de aplicación de Zebra se obtiene en el{' '}
             <a href="https://developer.zebra.com/user/apps" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">
               portal para desarrolladores Zebra
             </a>
-            . La <strong>Base URL</strong> y la <strong>API Key</strong> por defecto pueden definirse en <code className="bg-gray-100 px-1 rounded text-sm">.env</code> con <code className="bg-gray-100 px-1 rounded text-sm">VITE_API_BASE_URL</code> y <code className="bg-gray-100 px-1 rounded text-sm">VITE_API_KEY</code>. Lo guardado desde la interfaz en el navegador <strong>sustituye</strong> a esos valores por defecto.
+            . Lo guardado desde la interfaz en el navegador <strong>sustituye</strong> a esos valores por defecto.
           </p>
           <p>
             Opcionalmente puedes subir <strong>logo</strong> y <strong>favicon</strong>; se almacenan en el navegador como datos en base64 (evita ficheros muy grandes; por encima de unos <strong>400 KB</strong> por archivo puedes notar lentitud o límites de almacenamiento). <strong>Limpiar configuración guardada</strong> borra del navegador URL, clave, logo y favicon guardados; a partir de ahí vuelven a aplicarse los del <code className="bg-gray-100 px-1 rounded text-sm">.env</code> si existen.
           </p>
           <p className="text-sm text-gray-600">
-            Si cambias cualquier variable <code className="bg-gray-100 px-1 rounded text-sm">VITE_*</code> en <code className="bg-gray-100 px-1 rounded text-sm">.env</code>, hay que <strong>volver a ejecutar</strong> <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> o <code className="bg-gray-100 px-1 rounded text-sm">npm run build</code> según el modo, porque Vite las inyecta en el cliente en tiempo de compilación.
+            Si cambias <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_BASE_URL</code> o <code className="bg-gray-100 px-1 rounded text-sm">ZEBRA_API_KEY</code> en <code className="bg-gray-100 px-1 rounded text-sm">.env</code>, hay que <strong>volver a ejecutar</strong> <code className="bg-gray-100 px-1 rounded text-sm">npm run dev</code> o <code className="bg-gray-100 px-1 rounded text-sm">npm run build</code> para que el cliente reciba los nuevos valores por defecto.
           </p>
         </Section>
 

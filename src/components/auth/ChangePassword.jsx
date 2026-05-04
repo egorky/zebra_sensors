@@ -33,8 +33,8 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <div className="bg-white p-8 rounded-lg shadow-md border border-amber-200">
+    <div className="max-w-md mx-auto mt-6 sm:mt-8 px-4">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md border border-amber-200">
         <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-2">
           <Lock size={24} className="text-amber-600" />
           Cambiar contraseña

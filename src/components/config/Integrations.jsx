@@ -41,17 +41,12 @@ const Integrations = () => {
   });
   const [meta, setMeta] = useState({ last_poll_at: null, last_poll_error: null });
   const [runs, setRuns] = useState([]);
-  const [zebraOnServer, setZebraOnServer] = useState({ baseUrl: '', hasKey: false });
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
       const { settings } = await fetchIntegrationSettings();
-      setZebraOnServer({
-        baseUrl: settings.zebra_base_url || '',
-        hasKey: !!settings.has_zebra_api_key,
-      });
       setForm((f) => ({
         ...f,
         poller_enabled: !!settings.poller_enabled,
@@ -165,37 +160,19 @@ const Integrations = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold">Integración Zabbix y polling Zebra</h1>
-      <p className="text-gray-600">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-0 space-y-6 sm:space-y-8">
+      <h1 className="text-2xl sm:text-3xl font-bold">Integración Zabbix y polling Zebra</h1>
+      <p className="text-gray-600 text-sm sm:text-base">
         El servidor consulta el log de las tareas de Zebra que tengas activadas en <strong>Tareas</strong> y envía valores a Zabbix mediante la API JSON-RPC (
         <code className="bg-gray-100 px-1 rounded">history.push</code>
         , Zabbix 7+). Los cursores, el historial de ejecuciones, el último evento por sensor y las políticas por tarea se guardan en la base de datos de esta aplicación (
         <code className="bg-gray-100 px-1 rounded">zebra_poll_runs</code>, <code className="bg-gray-100 px-1 rounded">zebra_poll_cursors</code>,{' '}
         <code className="bg-gray-100 px-1 rounded">zebra_poll_sensor_state</code>, <code className="bg-gray-100 px-1 rounded">zebra_poll_sensor_policy</code>).
       </p>
-      <p className="text-gray-600 text-sm">
-        El polling automático corre en el mismo proceso Node.js que sirve Express: un temporizador (<code className="bg-gray-100 px-1 rounded">setInterval</code>) según el intervalo
-        configurado aquí. No es un servicio del sistema aparte; al reiniciar el servidor el ciclo se reinicia con la configuración guardada.
-      </p>
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800">
-        <p className="font-semibold mb-2">Conexión a la API de Zebra (poller)</p>
-        <p className="text-slate-700 mb-2">
-          La <strong>Base URL</strong> y la <strong>API Key</strong> de Zebra se definen en <strong>Configuración</strong>; al guardar ahí (como administrador) se copian al servidor para este
-          poller. Opcionalmente, en el entorno del proceso Node puedes fijar <code className="bg-white px-1 rounded text-xs">ZEBRA_API_BASE_URL</code> y{' '}
-          <code className="bg-white px-1 rounded text-xs">ZEBRA_API_KEY</code> (tienen prioridad sobre lo guardado en base de datos).
-        </p>
-        <ul className="list-disc pl-5 text-slate-700 space-y-1">
-          <li>
-            Base URL en servidor: <code className="bg-white px-1 rounded text-xs break-all">{zebraOnServer.baseUrl || '—'}</code>
-          </li>
-          <li>API Key en servidor: {zebraOnServer.hasKey ? 'Sí (valor oculto)' : 'No — guarda en Configuración o usa ZEBRA_API_KEY'}</li>
-        </ul>
-      </div>
       {error ? <p className="text-red-600 text-sm">{error}</p> : null}
       {message ? <p className="text-green-700 text-sm">{message}</p> : null}
 
-      <form onSubmit={onSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6">
+      <form onSubmit={onSubmit} className="bg-white p-4 sm:p-8 rounded-lg shadow-md space-y-6">
         <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">Programación global del poller</h2>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" name="poller_enabled" checked={form.poller_enabled} onChange={onChange} />
@@ -349,14 +326,14 @@ const Integrations = () => {
         </div>
       </form>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-950">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-5 text-sm text-amber-950">
         <p className="font-semibold mb-1">Tareas y sensores</p>
         <p>
           Activa el polling por tarea y el envío por sensor en <strong>Tareas</strong> (detalle de cada tarea). Esta pantalla define Zabbix, intervalo global y plantillas; la API de Zebra viene de <strong>Configuración</strong> (o variables de entorno del servidor).
         </p>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md text-sm text-gray-700">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md text-sm text-gray-700">
         <p>
           <strong>Último poll:</strong> {meta.last_poll_at ? String(meta.last_poll_at) : '—'}
         </p>
@@ -368,7 +345,7 @@ const Integrations = () => {
       </div>
 
       {runs.length ? (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-3">Últimas ejecuciones del poller</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
