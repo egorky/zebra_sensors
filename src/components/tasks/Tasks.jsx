@@ -6,10 +6,15 @@ import TaskDetails from './TaskDetails';
 import { TASK_SORT_FIELDS, TASK_STATUSES } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { canManageZebraContent } from '../../constants/authRoles';
-import { readBackendAuthFromStorage, syncTasksToBackend } from '../../services/backendApi';
+import {
+  readBackendAuthFromStorage,
+  syncTasksToBackend,
+  fetchTaskPollStates,
+  updateTaskPollState,
+} from '../../services/backendApi';
 
 const Tasks = () => {
-  const { role } = useAuth();
+  const { role, isAdmin } = useAuth();
   const canManageTasks = canManageZebraContent(role);
   const [tasks, setTasks] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
@@ -30,6 +35,7 @@ const Tasks = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [cachedDetails, setCachedDetails] = useState({});
+  const [pollByTask, setPollByTask] = useState({});
 
   const handleDetailUpdate = (taskId, detailType, data) => {
     setCachedDetails((prev) => ({
@@ -100,6 +106,30 @@ const Tasks = () => {
   }, [fetchTasks]);
 
   useEffect(() => {
+    if (!isAdmin || !readBackendAuthFromStorage()?.token) {
+      setPollByTask({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { tasks: pollRows } = await fetchTaskPollStates();
+        if (cancelled) return;
+        const m = {};
+        for (const r of pollRows || []) {
+          m[String(r.task_zebra_id)] = !!Number(r.polling_enabled);
+        }
+        setPollByTask(m);
+      } catch {
+        if (!cancelled) setPollByTask({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, tasks]);
+
+  useEffect(() => {
     setPage(0);
   }, [
     filterUpdatedFrom,
@@ -125,6 +155,15 @@ const Tasks = () => {
 
   const handleRowClick = (taskId) => {
     setSelectedTaskId((prevId) => (prevId === taskId ? null : taskId));
+  };
+
+  const handlePollToggle = async (taskId, enabled) => {
+    try {
+      await updateTaskPollState(taskId, enabled);
+      setPollByTask((p) => ({ ...p, [String(taskId)]: !!enabled }));
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
@@ -306,12 +345,13 @@ const Tasks = () => {
                 <th className="py-2 px-4 border-b text-left">Sensores</th>
                 <th className="py-2 px-4 border-b text-left">Alarmas</th>
                 <th className="py-2 px-4 border-b text-left">Fecha de Creación</th>
+                {isAdmin ? <th className="py-2 px-4 border-b text-left">Polling Zabbix</th> : null}
               </tr>
             </thead>
             <tbody>
               {!loading && tasks.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-4 px-4 text-center text-gray-500">
+                  <td colSpan={isAdmin ? 7 : 6} className="py-4 px-4 text-center text-gray-500">
                     No se encontraron tareas.
                   </td>
                 </tr>
@@ -327,10 +367,26 @@ const Tasks = () => {
                       <td className="py-2 px-4 border-b">{task.sensor_count}</td>
                       <td className="py-2 px-4 border-b">{task.alarm_count}</td>
                       <td className="py-2 px-4 border-b">{new Date(task.taskDetails.created).toLocaleString()}</td>
+                      {isAdmin ? (
+                        <td
+                          className="py-2 px-4 border-b"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={!!pollByTask[String(task.id)]}
+                              onChange={(e) => handlePollToggle(task.id, e.target.checked)}
+                            />
+                            <span>Activo</span>
+                          </label>
+                        </td>
+                      ) : null}
                     </tr>
                     {selectedTaskId === task.id && (
                       <tr>
-                        <td colSpan="6" className="p-4 bg-gray-50">
+                        <td colSpan={isAdmin ? 7 : 6} className="p-4 bg-gray-50">
                           <TaskDetails taskId={task.id} cachedData={cachedDetails[task.id]} onDetailUpdate={handleDetailUpdate} />
                         </td>
                       </tr>

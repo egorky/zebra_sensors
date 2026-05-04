@@ -91,26 +91,17 @@ function sensorPollingEnabled(policyMap, sensorId) {
   return v !== false;
 }
 
-export async function runZebraZabbixPollOnce(db, { manual = false } = {}) {
-  const settings = await loadSettings(db);
-  if (!settings) return { skipped: true, reason: 'no_settings' };
-  if (!manual && !Number(settings.poller_enabled)) return { skipped: true, reason: 'disabled' };
+async function insertPollRun(db, taskId, nowSql) {
+  return db.run(
+    `INSERT INTO zebra_poll_runs (task_id, started_at, status, events_fetched, events_pushed) VALUES (?, ${nowSql}, 'running', 0, 0)`,
+    [taskId]
+  );
+}
 
-  const taskId = String(settings.zebra_task_id || '').trim();
+async function runPollForSingleTask(db, settings, taskId, manual) {
   const zebraKey = String(settings.zebra_api_key || '').trim();
   const zebraBase = String(settings.zebra_base_url || '').trim() || 'https://api.zebra.com/v2';
   const zabbixUrl = String(settings.zabbix_api_url || '').trim();
-  if (!taskId || !zebraKey) {
-    const msg = 'Faltan zebra_task_id o zebra_api_key en integración';
-    await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
-    return { ok: false, error: msg };
-  }
-  if (!zabbixUrl) {
-    const msg = 'Falta zabbix_api_url';
-    await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
-    return { ok: false, error: msg };
-  }
-
   const authType = settings.zabbix_auth_type === 'password' ? 'password' : 'token';
   const apiUrl = normalizeZabbixApiUrl(zabbixUrl);
   const creds = {
@@ -119,9 +110,8 @@ export async function runZebraZabbixPollOnce(db, { manual = false } = {}) {
     password: String(settings.zabbix_password || '').trim(),
   };
 
-  const runInsert = await db.run(
-    `INSERT INTO zebra_poll_runs (started_at, status, events_fetched, events_pushed) VALUES (${sqlNow(db)}, 'running', 0, 0)`
-  );
+  const nowSql = sqlNow(db);
+  const runInsert = await insertPollRun(db, taskId, nowSql);
   const runId = runInsert.lastInsertRowid;
 
   const now = new Date();
@@ -223,28 +213,78 @@ export async function runZebraZabbixPollOnce(db, { manual = false } = {}) {
       lastProcessedTs = endIso;
     }
 
-    await finalizePollState(db, taskId, lastProcessedTs, endIso, filtered, sqlNow(db), policyMap);
+    await finalizePollState(db, taskId, lastProcessedTs, endIso, filtered, nowSql, policyMap);
 
     await db.run(
-      `UPDATE zebra_poll_runs SET finished_at = ${sqlNow(db)}, status = 'ok', events_fetched = ?, events_pushed = ?, error_message = NULL WHERE id = ?`,
+      `UPDATE zebra_poll_runs SET finished_at = ${nowSql}, status = 'ok', events_fetched = ?, events_pushed = ?, error_message = NULL WHERE id = ?`,
       [eventsFetched, eventsPushed, runId]
     );
-    await db.run(
-      `UPDATE integration_settings SET last_poll_at = ${sqlNow(db)}, last_poll_error = NULL, updated_at = ${sqlNow(db)} WHERE id = 1`
-    );
 
-    return { ok: true, eventsFetched, eventsPushed, filtered: filtered.length };
+    return { ok: true, taskId, eventsFetched, eventsPushed, filtered: filtered.length };
   } catch (e) {
     const msg = String(e.message || e);
     await db.run(
-      `UPDATE zebra_poll_runs SET finished_at = ${sqlNow(db)}, status = 'error', events_fetched = ?, events_pushed = ?, error_message = ? WHERE id = ?`,
+      `UPDATE zebra_poll_runs SET finished_at = ${nowSql}, status = 'error', events_fetched = ?, events_pushed = ?, error_message = ? WHERE id = ?`,
       [eventsFetched, eventsPushed, msg.slice(0, 4000), runId]
     );
-    await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [
-      msg.slice(0, 4000),
-    ]);
-    return { ok: false, error: msg, eventsFetched, eventsPushed };
+    return { ok: false, taskId, error: msg, eventsFetched, eventsPushed };
   }
+}
+
+export async function runZebraZabbixPollOnce(db, { manual = false, singleTaskId = null } = {}) {
+  const settings = await loadSettings(db);
+  if (!settings) return { skipped: true, reason: 'no_settings' };
+  if (!manual && !Number(settings.poller_enabled)) return { skipped: true, reason: 'disabled' };
+
+  const zebraKey = String(settings.zebra_api_key || '').trim();
+  const zabbixUrl = String(settings.zabbix_api_url || '').trim();
+  if (!zebraKey) {
+    const msg = 'Falta la API key de Zebra en Integración Zabbix / polling';
+    await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
+    return { ok: false, error: msg };
+  }
+  if (!zabbixUrl) {
+    const msg = 'Falta la URL de Zabbix en integración';
+    await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
+    return { ok: false, error: msg };
+  }
+
+  let taskIds = [];
+  if (singleTaskId && manual) {
+    taskIds = [String(singleTaskId).trim()].filter(Boolean);
+  } else {
+    const rows = await db.all(`SELECT task_zebra_id FROM zebra_task_poll_config WHERE polling_enabled = 1`);
+    taskIds = (rows || []).map((r) => String(r.task_zebra_id)).filter(Boolean);
+  }
+
+  if (!taskIds.length) {
+    if (manual) {
+      const msg =
+        'No hay tareas con polling a Zabbix activado (actívalo en Gestión de tareas) o indica task_id en el cuerpo de la petición.';
+      await db.run(`UPDATE integration_settings SET last_poll_error = ?, updated_at = ${sqlNow(db)} WHERE id = 1`, [msg]);
+      return { ok: false, error: msg, reason: 'no_tasks' };
+    }
+    return { skipped: true, reason: 'no_tasks' };
+  }
+
+  const n = sqlNow(db);
+  const results = [];
+  for (const taskId of taskIds) {
+    const r = await runPollForSingleTask(db, settings, taskId, manual);
+    results.push(r);
+  }
+
+  const anyFail = results.some((r) => !r.ok);
+  const errText = results
+    .filter((r) => !r.ok)
+    .map((r) => `${r.taskId}: ${r.error || 'error'}`)
+    .join('; ')
+    .slice(0, 3900);
+  await db.run(`UPDATE integration_settings SET last_poll_at = ${n}, last_poll_error = ?, updated_at = ${n} WHERE id = 1`, [
+    anyFail ? errText : null,
+  ]);
+
+  return { ok: !anyFail, tasks: results, error: anyFail ? errText : undefined };
 }
 
 async function finalizePollState(db, taskId, lastProcessedTs, endIso, filtered, nowSql, policyMap) {

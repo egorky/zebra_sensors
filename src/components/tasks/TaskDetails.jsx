@@ -12,6 +12,7 @@ import { StopCircle, Plus, Download, AlertTriangle, BellRing, Package } from 'lu
 import { formatZebraTemperature, isInvalidZebraTemperature } from '../../utils/zebraReadings';
 import { useAuth } from '../../context/AuthContext';
 import { canManageZebraContent } from '../../constants/authRoles';
+import TaskDetailsZabbixPoll from './TaskDetailsZabbixPoll';
 
 const ASSET_FORMAT_OPTIONS = ['ASSET_ID_FORMAT_GS1_URI'];
 
@@ -43,7 +44,7 @@ function flattenLogRows(payload) {
 }
 
 const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
-  const { role } = useAuth();
+  const { role, isAdmin } = useAuth();
   const canManageTask = canManageZebraContent(role);
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -338,6 +339,8 @@ const TaskDetails = ({ taskId, cachedData, onDetailUpdate }) => {
           </dl>
         </div>
       </div>
+
+      {isAdmin ? <TaskDetailsZabbixPoll taskId={taskId} /> : null}
 
       {canManageTask && (
         <div className="flex flex-wrap gap-4 items-center">

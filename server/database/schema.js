@@ -78,8 +78,14 @@ async function applySqliteSchema(adapter) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (task_id, sensor_zebra_id)
     );
+    CREATE TABLE IF NOT EXISTS zebra_task_poll_config (
+      task_zebra_id TEXT PRIMARY KEY,
+      polling_enabled INTEGER NOT NULL DEFAULT 0 CHECK (polling_enabled IN (0, 1)),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS zebra_poll_runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id TEXT,
       started_at TEXT NOT NULL DEFAULT (datetime('now')),
       finished_at TEXT,
       status TEXT NOT NULL,
@@ -102,6 +108,16 @@ async function applySqliteSchema(adapter) {
        VALUES (1, 0, 6, 'https://api.zebra.com/v2', '["Zebra Devices","Prologitec"]', 'alarm.{sensorId}', 300, 120)`
     );
   }
+  await migratePollSchemaSqlite(adapter);
+}
+
+async function migratePollSchemaSqlite(adapter) {
+  try {
+    await adapter.get('SELECT task_id FROM zebra_poll_runs LIMIT 1');
+  } catch {
+    await adapter.exec('ALTER TABLE zebra_poll_runs ADD COLUMN task_id TEXT');
+  }
+  await migrateLegacyZebraTaskToPollConfig(adapter);
 }
 
 async function applyMysqlSchema(adapter) {
@@ -173,8 +189,14 @@ async function applyMysqlSchema(adapter) {
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (task_id, sensor_zebra_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    CREATE TABLE IF NOT EXISTS zebra_task_poll_config (
+      task_zebra_id VARCHAR(128) NOT NULL PRIMARY KEY,
+      polling_enabled TINYINT(1) NOT NULL DEFAULT 0,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     CREATE TABLE IF NOT EXISTS zebra_poll_runs (
       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      task_id VARCHAR(128) NULL,
       started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       finished_at DATETIME NULL,
       status VARCHAR(32) NOT NULL,
@@ -190,6 +212,44 @@ async function applyMysqlSchema(adapter) {
       `INSERT INTO integration_settings (id, poller_enabled, poll_interval_minutes, zebra_base_url, zabbix_hosts_json, item_key_template, min_seconds_between_events, initial_lookback_minutes)
        VALUES (1, 0, 6, 'https://api.zebra.com/v2', ?, 'alarm.{sensorId}', 300, 120)`,
       ['["Zebra Devices","Prologitec"]']
+    );
+  }
+  await migratePollSchemaMysql(adapter);
+}
+
+async function migratePollSchemaMysql(adapter) {
+  try {
+    const col = await adapter.get(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'zebra_poll_runs' AND COLUMN_NAME = 'task_id'`
+    );
+    if (!col) {
+      await adapter.exec('ALTER TABLE zebra_poll_runs ADD COLUMN task_id VARCHAR(128) NULL');
+    }
+  } catch {
+    /* ignore */
+  }
+  await adapter.exec(`
+    CREATE TABLE IF NOT EXISTS zebra_task_poll_config (
+      task_zebra_id VARCHAR(128) NOT NULL PRIMARY KEY,
+      polling_enabled TINYINT(1) NOT NULL DEFAULT 0,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+  await migrateLegacyZebraTaskToPollConfig(adapter);
+}
+
+async function migrateLegacyZebraTaskToPollConfig(adapter) {
+  const row = await adapter.get('SELECT zebra_task_id, poller_enabled FROM integration_settings WHERE id = 1');
+  if (!row?.zebra_task_id) return;
+  const tid = String(row.zebra_task_id).trim();
+  if (!tid) return;
+  const has = await adapter.get('SELECT task_zebra_id FROM zebra_task_poll_config WHERE task_zebra_id = ?', [tid]);
+  if (has) return;
+  if (Number(row.poller_enabled)) {
+    const n = sqlNow(adapter);
+    await adapter.run(
+      `INSERT INTO zebra_task_poll_config (task_zebra_id, polling_enabled, updated_at) VALUES (?, 1, ${n})`,
+      [tid]
     );
   }
 }

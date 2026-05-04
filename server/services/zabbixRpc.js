@@ -115,3 +115,41 @@ export async function zabbixHistoryPush(apiUrl, authValue, dataRows) {
   const url = normalizeZabbixApiUrl(apiUrl);
   return zabbixJsonRpc(url, buildJsonRpcBody('history.push', { data: dataRows }, authValue));
 }
+
+export async function zabbixHostList(apiUrl, authValue) {
+  const url = normalizeZabbixApiUrl(apiUrl);
+  return zabbixJsonRpc(
+    url,
+    buildJsonRpcBody(
+      'host.get',
+      {
+        output: ['hostid', 'host', 'name'],
+        selectInterfaces: ['interfaceid', 'main', 'type'],
+        sortfield: 'name',
+      },
+      authValue
+    )
+  );
+}
+
+export async function zabbixItemGetByHostAndKey(apiUrl, authValue, hostid, key_) {
+  const url = normalizeZabbixApiUrl(apiUrl);
+  const rows = await zabbixJsonRpc(
+    url,
+    buildJsonRpcBody(
+      'item.get',
+      {
+        hostids: [String(hostid)],
+        filter: { key_: [String(key_)] },
+        output: ['itemid', 'name', 'key_', 'status'],
+      },
+      authValue
+    )
+  );
+  return Array.isArray(rows) ? rows : [];
+}
+
+export async function zabbixItemCreateTrapper(apiUrl, authValue, params) {
+  const url = normalizeZabbixApiUrl(apiUrl);
+  return zabbixJsonRpc(url, buildJsonRpcBody('item.create', [params], authValue));
+}

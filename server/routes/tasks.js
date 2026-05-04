@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncRoute } from '../utils/asyncRoute.js';
+import { requireAdmin } from '../middleware/auth.js';
 import { sqlNow } from '../database/schema.js';
 
 function mapTask(t) {
@@ -72,6 +73,56 @@ export function createTasksRouter(db) {
         }
       }
       res.json({ synced: n });
+    })
+  );
+
+  r.get(
+    '/poll-states',
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const order =
+        db.dialect === 'mysql'
+          ? 'ORDER BY t.name ASC'
+          : 'ORDER BY t.name COLLATE NOCASE';
+      const rows = await db.all(
+        `SELECT t.zebra_id AS task_zebra_id, t.name AS task_name,
+                COALESCE(p.polling_enabled, 0) AS polling_enabled
+         FROM task_snapshots t
+         LEFT JOIN zebra_task_poll_config p ON p.task_zebra_id = t.zebra_id
+         ${order}`
+      );
+      res.json({ tasks: rows });
+    })
+  );
+
+  r.put(
+    '/poll-states/:taskId',
+    requireAdmin,
+    asyncRoute(async (req, res) => {
+      const taskId = String(req.params.taskId || '').trim();
+      if (!taskId) {
+        return res.status(400).json({ error: 'taskId inválido' });
+      }
+      const enabled = req.body?.polling_enabled === true || req.body?.polling_enabled === 1 ? 1 : 0;
+      const nowF = sqlNow(db);
+      if (db.dialect === 'mysql') {
+        await db.run(
+          `INSERT INTO zebra_task_poll_config (task_zebra_id, polling_enabled, updated_at)
+           VALUES (?, ?, ${nowF})
+           ON DUPLICATE KEY UPDATE polling_enabled = VALUES(polling_enabled), updated_at = VALUES(updated_at)`,
+          [taskId, enabled]
+        );
+      } else {
+        await db.run(
+          `INSERT INTO zebra_task_poll_config (task_zebra_id, polling_enabled, updated_at)
+           VALUES (?, ?, ${nowF})
+           ON CONFLICT(task_zebra_id) DO UPDATE SET
+             polling_enabled = excluded.polling_enabled,
+             updated_at = excluded.updated_at`,
+          [taskId, enabled]
+        );
+      }
+      res.json({ task_zebra_id: taskId, polling_enabled: !!enabled });
     })
   );
 

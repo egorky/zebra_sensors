@@ -10,12 +10,18 @@ import {
 } from '../../constants/zebraFilters';
 import { useAuth } from '../../context/AuthContext';
 import { canManageZebraContent } from '../../constants/authRoles';
-import { readBackendAuthFromStorage, syncSensorsToBackend } from '../../services/backendApi';
+import {
+  readBackendAuthFromStorage,
+  syncSensorsToBackend,
+  fetchZabbixHosts,
+  checkZabbixSensorItem,
+  createZabbixSensorItem,
+} from '../../services/backendApi';
 
 const Sensors = () => {
-  const { role } = useAuth();
+  const { role, isAdmin } = useAuth();
   const canManageSensors = canManageZebraContent(role);
-  const tableCols = canManageSensors ? 8 : 7;
+  const tableCols = 7 + (isAdmin ? 1 : 0) + (canManageSensors ? 1 : 0);
   const [sensors, setSensors] = useState([]);
   const [pageResponse, setPageResponse] = useState(null);
   const [page, setPage] = useState(0);
@@ -37,6 +43,68 @@ const Sensors = () => {
   const [serialNumber, setSerialNumber] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [selectedSensorId, setSelectedSensorId] = useState(null);
+  const [zabbixTarget, setZabbixTarget] = useState(null);
+  const [zabbixHosts, setZabbixHosts] = useState([]);
+  const [zabbixHostid, setZabbixHostid] = useState('');
+  const [zabbixBusy, setZabbixBusy] = useState(false);
+  const [zabbixModalErr, setZabbixModalErr] = useState('');
+
+  const openZabbixModal = async (sensor) => {
+    setZabbixTarget(sensor);
+    setZabbixHostid('');
+    setZabbixModalErr('');
+    setZabbixHosts([]);
+    if (!readBackendAuthFromStorage()?.token) {
+      setZabbixModalErr('Inicia sesión en el servidor (admin) para usar Zabbix.');
+      return;
+    }
+    setZabbixBusy(true);
+    try {
+      const { hosts } = await fetchZabbixHosts();
+      setZabbixHosts(Array.isArray(hosts) ? hosts : []);
+    } catch (e) {
+      setZabbixModalErr(String(e.message || e));
+    } finally {
+      setZabbixBusy(false);
+    }
+  };
+
+  const closeZabbixModal = () => {
+    setZabbixTarget(null);
+    setZabbixHosts([]);
+    setZabbixHostid('');
+    setZabbixModalErr('');
+  };
+
+  const handleCreateZabbixItem = async () => {
+    if (!zabbixTarget || !zabbixHostid) {
+      setZabbixModalErr('Selecciona un host de Zabbix.');
+      return;
+    }
+    const sensorZebraId = String(zabbixTarget.id || '').trim();
+    if (!sensorZebraId) {
+      setZabbixModalErr('El sensor no tiene id utilizable.');
+      return;
+    }
+    setZabbixBusy(true);
+    setZabbixModalErr('');
+    try {
+      const check = await checkZabbixSensorItem(zabbixHostid, sensorZebraId);
+      if (check.exists) {
+        window.alert(
+          `Ya existe un ítem en ese host con la clave «${check.itemKey}» (${check.itemName}). No se ha creado nada nuevo.`
+        );
+        return;
+      }
+      await createZabbixSensorItem(zabbixHostid, sensorZebraId);
+      window.alert(`Ítem creado en Zabbix: «${check.itemName}» (clave ${check.itemKey}).`);
+      closeZabbixModal();
+    } catch (e) {
+      setZabbixModalErr(String(e.message || e));
+    } finally {
+      setZabbixBusy(false);
+    }
+  };
 
   const handleRowClick = (sensorId) => {
     setSelectedSensorId((prevId) => (prevId === sensorId ? null : sensorId));
@@ -390,6 +458,7 @@ const Sensors = () => {
                 <th className="py-2 px-4 border-b text-left">Estado</th>
                 <th className="py-2 px-4 border-b text-left">Última temp.</th>
                 <th className="py-2 px-4 border-b text-left">Batería</th>
+                {isAdmin && <th className="py-2 px-4 border-b text-left">Zabbix</th>}
                 {canManageSensors && <th className="py-2 px-4 border-b text-left">Acciones</th>}
               </tr>
             </thead>
@@ -413,6 +482,22 @@ const Sensors = () => {
                       <td className="py-2 px-4 border-b">{sensor.status}</td>
                       <td className="py-2 px-4 border-b">{formatZebraTemperature(sensor.unverified?.last_temperature)}</td>
                       <td className="py-2 px-4 border-b">{sensor.battery_level}%</td>
+                      {isAdmin && (
+                        <td
+                          className="py-2 px-4 border-b"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openZabbixModal(sensor)}
+                            className="bg-indigo-600 hover:bg-indigo-800 text-white font-semibold py-1 px-2 rounded text-xs disabled:opacity-50"
+                            disabled={loading}
+                          >
+                            Crear ítem Zabbix
+                          </button>
+                        </td>
+                      )}
                       {canManageSensors && (
                         <td className="py-2 px-4 border-b">
                           <button
@@ -442,6 +527,63 @@ const Sensors = () => {
           </table>
         </div>
       </div>
+
+      {zabbixTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="zabbix-modal-title"
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 id="zabbix-modal-title" className="text-lg font-bold text-gray-900">
+              Crear ítem en Zabbix
+            </h3>
+            <p className="text-sm text-gray-600">
+              Sensor: <strong>{zabbixTarget.name || zabbixTarget.serial_number}</strong> ({String(zabbixTarget.id)})
+            </p>
+            <p className="text-xs text-gray-500">
+              El nombre del ítem será <strong>Alarmas</strong> seguido del nombre del sensor (p. ej. Alarmas DLJ…), con la clave definida en Integración (plantilla{' '}
+              <code className="bg-gray-100 px-1 rounded">{'{sensorId}'}</code>).
+            </p>
+            <label className="block text-sm font-medium text-gray-700">
+              Host en Zabbix
+              <select
+                className="mt-1 border rounded w-full py-2 px-3 text-sm"
+                value={zabbixHostid}
+                onChange={(e) => setZabbixHostid(e.target.value)}
+                disabled={zabbixBusy}
+              >
+                <option value="">— Elegir host —</option>
+                {zabbixHosts.map((h) => (
+                  <option key={h.hostid} value={String(h.hostid)}>
+                    {h.host || h.name || h.hostid} (id {h.hostid})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {zabbixModalErr ? <p className="text-sm text-red-600">{zabbixModalErr}</p> : null}
+            <div className="flex flex-wrap gap-2 justify-end pt-2">
+              <button
+                type="button"
+                onClick={closeZabbixModal}
+                className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={zabbixBusy}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateZabbixItem}
+                className="px-4 py-2 rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-800 disabled:opacity-50"
+                disabled={zabbixBusy || !zabbixHostid}
+              >
+                {zabbixBusy ? 'Comprobando…' : 'Comprobar y crear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

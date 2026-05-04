@@ -3,6 +3,11 @@ import { asyncRoute } from '../utils/asyncRoute.js';
 import { sqlNow } from '../database/schema.js';
 import { testZabbixConnection } from '../services/zabbixRpc.js';
 import { runZebraZabbixPollOnce } from '../services/zebraZabbixPoller.js';
+import {
+  checkSensorZabbixItem,
+  createSensorZabbixTrapperItem,
+  listZabbixHosts,
+} from '../services/zabbixSensorItem.js';
 
 function parseHostsJson(raw) {
   try {
@@ -23,7 +28,6 @@ function maskRow(row) {
     poller_enabled: !!row.poller_enabled,
     poll_interval_minutes: Number(row.poll_interval_minutes) || 6,
     zebra_base_url: row.zebra_base_url || '',
-    zebra_task_id: row.zebra_task_id || '',
     has_zebra_api_key: Boolean(String(row.zebra_api_key || '').trim()),
     zabbix_api_url: row.zabbix_api_url || '',
     zabbix_auth_type: row.zabbix_auth_type === 'password' ? 'password' : 'token',
@@ -70,8 +74,6 @@ export function createIntegrationRouter(db, pollerCtl) {
           : Number(row.poll_interval_minutes) || 6
       );
       const zebra_base_url = String(b.zebra_base_url ?? row.zebra_base_url).trim() || 'https://api.zebra.com/v2';
-      const zebra_task_id =
-        b.zebra_task_id !== undefined ? String(b.zebra_task_id).trim() : row.zebra_task_id;
       const zebra_api_key =
         b.zebra_api_key !== undefined && String(b.zebra_api_key).trim() !== ''
           ? String(b.zebra_api_key).trim()
@@ -124,7 +126,6 @@ export function createIntegrationRouter(db, pollerCtl) {
           poller_enabled = ?,
           poll_interval_minutes = ?,
           zebra_base_url = ?,
-          zebra_task_id = ?,
           zebra_api_key = ?,
           zabbix_api_url = ?,
           zabbix_auth_type = ?,
@@ -141,7 +142,6 @@ export function createIntegrationRouter(db, pollerCtl) {
           poller_enabled,
           poll_interval_minutes,
           zebra_base_url,
-          zebra_task_id || null,
           zebra_api_key || null,
           zabbix_api_url || null,
           zabbix_auth_type,
@@ -183,9 +183,41 @@ export function createIntegrationRouter(db, pollerCtl) {
 
   r.post(
     '/zabbix-poller/run-now',
-    asyncRoute(async (_req, res) => {
-      const result = await runZebraZabbixPollOnce(db, { manual: true });
+    asyncRoute(async (req, res) => {
+      const single = req.body?.task_id ? String(req.body.task_id).trim() : null;
+      const result = await runZebraZabbixPollOnce(db, { manual: true, singleTaskId: single || null });
       res.json(result);
+    })
+  );
+
+  r.get(
+    '/zabbix/hosts',
+    asyncRoute(async (_req, res) => {
+      const row = await db.get('SELECT * FROM integration_settings WHERE id = 1');
+      const hosts = await listZabbixHosts(row);
+      res.json({ hosts });
+    })
+  );
+
+  r.get(
+    '/zabbix/sensor-item-check',
+    asyncRoute(async (req, res) => {
+      const hostid = String(req.query.hostid || '').trim();
+      const sensorZebraId = String(req.query.sensor_zebra_id || '').trim();
+      const row = await db.get('SELECT * FROM integration_settings WHERE id = 1');
+      const out = await checkSensorZabbixItem(db, row, { hostid, sensorZebraId });
+      res.json(out);
+    })
+  );
+
+  r.post(
+    '/zabbix/sensor-item',
+    asyncRoute(async (req, res) => {
+      const hostid = String(req.body?.hostid || '').trim();
+      const sensorZebraId = String(req.body?.sensor_zebra_id || '').trim();
+      const row = await db.get('SELECT * FROM integration_settings WHERE id = 1');
+      const result = await createSensorZabbixTrapperItem(db, row, { hostid, sensorZebraId });
+      res.status(201).json({ ok: true, result });
     })
   );
 
@@ -286,7 +318,7 @@ export function createIntegrationRouter(db, pollerCtl) {
     '/zabbix-poller/runs',
     asyncRoute(async (_req, res) => {
       const rows = await db.all(
-        `SELECT id, started_at, finished_at, status, events_fetched, events_pushed, error_message
+        `SELECT id, task_id, started_at, finished_at, status, events_fetched, events_pushed, error_message
          FROM zebra_poll_runs ORDER BY id DESC LIMIT 50`
       );
       res.json({ runs: rows });
