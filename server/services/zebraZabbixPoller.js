@@ -166,8 +166,7 @@ async function runPollForSingleTask(db, settings, taskId, manual) {
     const keyTpl = settings.item_key_template || 'alarm.{sensorId}';
     const policyMap = await loadSensorPollingPolicyMap(db, taskId);
 
-    const auth = await getZabbixAuthSession(apiUrl, authType, creds);
-    const authValue = auth.value;
+    const zabbixAuth = await getZabbixAuthSession(apiUrl, authType, creds);
 
     const dataRows = [];
     for (const item of filtered) {
@@ -190,7 +189,7 @@ async function runPollForSingleTask(db, settings, taskId, manual) {
     const batchSize = 200;
     for (let i = 0; i < dataRows.length; i += batchSize) {
       const chunk = dataRows.slice(i, i + batchSize);
-      await zabbixHistoryPush(apiUrl, authValue, chunk);
+      await zabbixHistoryPush(apiUrl, zabbixAuth, chunk);
       eventsPushed += chunk.length;
     }
 

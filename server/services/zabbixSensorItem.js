@@ -40,12 +40,12 @@ export async function getZabbixAuthForSettings(settings) {
   const apiUrl = normalizeZabbixApiUrl(zabbixUrl);
   const authType = settings.zabbix_auth_type === 'password' ? 'password' : 'token';
   const auth = await getZabbixAuthSession(apiUrl, authType, zabbixCredsFromSettings(settings));
-  return { apiUrl, authValue: auth.value };
+  return { apiUrl, auth };
 }
 
 export async function listZabbixHosts(settings) {
-  const { apiUrl, authValue } = await getZabbixAuthForSettings(settings);
-  const hosts = await zabbixHostList(apiUrl, authValue);
+  const { apiUrl, auth } = await getZabbixAuthForSettings(settings);
+  const hosts = await zabbixHostList(apiUrl, auth);
   return Array.isArray(hosts) ? hosts : [];
 }
 
@@ -60,8 +60,8 @@ export async function checkSensorZabbixItem(db, settings, { hostid, sensorZebraI
   const key = itemKeyFromTemplate(settings.item_key_template, sid);
   const name = alarmItemName(sid, row.name, row.serial_number);
 
-  const { apiUrl, authValue } = await getZabbixAuthForSettings(settings);
-  const existing = await zabbixItemGetByHostAndKey(apiUrl, authValue, hid, key);
+  const { apiUrl, auth } = await getZabbixAuthForSettings(settings);
+  const existing = await zabbixItemGetByHostAndKey(apiUrl, auth, hid, key);
 
   return {
     itemName: name,
@@ -79,8 +79,8 @@ export async function createSensorZabbixTrapperItem(db, settings, { hostid, sens
     throw err;
   }
 
-  const { apiUrl, authValue } = await getZabbixAuthForSettings(settings);
-  const hosts = await zabbixHostList(apiUrl, authValue);
+  const { apiUrl, auth } = await getZabbixAuthForSettings(settings);
+  const hosts = await zabbixHostList(apiUrl, auth);
   const host = (hosts || []).find((h) => String(h.hostid) === String(hostid));
   if (!host) throw new Error('Host no encontrado en Zabbix');
 
@@ -97,5 +97,5 @@ export async function createSensorZabbixTrapperItem(db, settings, { hostid, sens
     interfaceid,
   };
 
-  return zabbixItemCreateTrapper(apiUrl, authValue, params);
+  return zabbixItemCreateTrapper(apiUrl, auth, params);
 }

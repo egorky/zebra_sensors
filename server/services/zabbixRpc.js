@@ -1,5 +1,7 @@
 /**
  * Zabbix JSON-RPC (api_jsonrpc.php). Usa history.push (Zabbix 7+) en lugar de zabbix_sender.
+ * Tokens de API (Zabbix 5.4+): cabecera Authorization: Bearer; no usar el campo JSON "auth"
+ * (ese campo es para el sessionid corto de user.login; un token largo provoca "sessionid value is too long").
  * @see https://www.zabbix.com/documentation/current/en/manual/api
  */
 
@@ -20,10 +22,19 @@ function cacheKey(url, username) {
   return `${url}\0${username}`;
 }
 
-export async function zabbixJsonRpc(apiUrl, payload) {
+/**
+ * @param {string} apiUrl
+ * @param {object} payload - cuerpo JSON-RPC (sin auth en cuerpo si usas token; buildJsonRpcBody lo añade solo para sesión)
+ * @param {{ kind: 'token'|'session', value: string }|null|undefined} zabbixAuth
+ */
+export async function zabbixJsonRpc(apiUrl, payload, zabbixAuth) {
+  const headers = { 'Content-Type': 'application/json-rpc', Accept: 'application/json' };
+  if (zabbixAuth?.kind === 'token' && zabbixAuth.value) {
+    headers.Authorization = `Bearer ${zabbixAuth.value}`;
+  }
   const r = await fetch(apiUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json-rpc', Accept: 'application/json' },
+    headers,
     body: JSON.stringify(payload),
   });
   const text = await r.text();
@@ -74,15 +85,20 @@ export async function getZabbixAuthSession(apiUrl, authType, { apiToken, usernam
   throw new Error('Zabbix: faltan credenciales (token o usuario/contraseña)');
 }
 
-export function buildJsonRpcBody(method, params, authValue) {
+/**
+ * @param {string} method
+ * @param {object|array} params
+ * @param {{ kind: 'token'|'session', value: string }|null|undefined} zabbixAuth
+ */
+export function buildJsonRpcBody(method, params, zabbixAuth) {
   const body = {
     jsonrpc: '2.0',
     method,
     params,
     id: Math.floor(Math.random() * 1e9),
   };
-  if (authValue != null && authValue !== '') {
-    body.auth = authValue;
+  if (zabbixAuth?.kind === 'session' && zabbixAuth.value) {
+    body.auth = zabbixAuth.value;
   }
   return body;
 }
@@ -99,10 +115,11 @@ export async function testZabbixConnection(apiUrl, authType, creds) {
   });
   let authed = null;
   try {
-    const auth = await getZabbixAuthSession(url, authType, creds);
+    const zabbixAuth = await getZabbixAuthSession(url, authType, creds);
     authed = await zabbixJsonRpc(
       url,
-      buildJsonRpcBody('host.get', { output: ['hostid'], limit: 1 }, auth.value)
+      buildJsonRpcBody('host.get', { output: ['hostid'], limit: 1 }, zabbixAuth),
+      zabbixAuth
     );
   } catch (e) {
     return { ok: true, version, authOk: false, authError: String(e.message || e) };
@@ -110,13 +127,13 @@ export async function testZabbixConnection(apiUrl, authType, creds) {
   return { ok: true, version, authOk: true, hostProbe: Array.isArray(authed) ? authed.length : authed };
 }
 
-export async function zabbixHistoryPush(apiUrl, authValue, dataRows) {
+export async function zabbixHistoryPush(apiUrl, zabbixAuth, dataRows) {
   if (!dataRows?.length) return { processed: 0 };
   const url = normalizeZabbixApiUrl(apiUrl);
-  return zabbixJsonRpc(url, buildJsonRpcBody('history.push', { data: dataRows }, authValue));
+  return zabbixJsonRpc(url, buildJsonRpcBody('history.push', { data: dataRows }, zabbixAuth), zabbixAuth);
 }
 
-export async function zabbixHostList(apiUrl, authValue) {
+export async function zabbixHostList(apiUrl, zabbixAuth) {
   const url = normalizeZabbixApiUrl(apiUrl);
   return zabbixJsonRpc(
     url,
@@ -127,12 +144,13 @@ export async function zabbixHostList(apiUrl, authValue) {
         selectInterfaces: ['interfaceid', 'main', 'type'],
         sortfield: 'name',
       },
-      authValue
-    )
+      zabbixAuth
+    ),
+    zabbixAuth
   );
 }
 
-export async function zabbixItemGetByHostAndKey(apiUrl, authValue, hostid, key_) {
+export async function zabbixItemGetByHostAndKey(apiUrl, zabbixAuth, hostid, key_) {
   const url = normalizeZabbixApiUrl(apiUrl);
   const rows = await zabbixJsonRpc(
     url,
@@ -143,13 +161,14 @@ export async function zabbixItemGetByHostAndKey(apiUrl, authValue, hostid, key_)
         filter: { key_: [String(key_)] },
         output: ['itemid', 'name', 'key_', 'status'],
       },
-      authValue
-    )
+      zabbixAuth
+    ),
+    zabbixAuth
   );
   return Array.isArray(rows) ? rows : [];
 }
 
-export async function zabbixItemCreateTrapper(apiUrl, authValue, params) {
+export async function zabbixItemCreateTrapper(apiUrl, zabbixAuth, params) {
   const url = normalizeZabbixApiUrl(apiUrl);
-  return zabbixJsonRpc(url, buildJsonRpcBody('item.create', [params], authValue));
+  return zabbixJsonRpc(url, buildJsonRpcBody('item.create', [params], zabbixAuth), zabbixAuth);
 }
