@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '');
   return {
+    base: '/manager/',
     plugins: [react()],
     define: {
       __ZEBRA_BUILD_BASE_URL__: JSON.stringify(String(env.ZEBRA_API_BASE_URL || '').trim()),

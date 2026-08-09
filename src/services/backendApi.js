@@ -1,10 +1,17 @@
-/** Base del API: vacío = mismo origen (Express sirve front + `/api` en un solo puerto). */
+/**
+ * Prefijo público detrás de nginx (producción).
+ * Vacío vía VITE_APP_BASE="" si sirves la app en la raíz.
+ */
+const APP_BASE = (import.meta.env.VITE_APP_BASE ?? '/manager').replace(/\/$/, '');
+
+/** Si defines VITE_BACKEND_URL (otro host), se usa tal cual; si no, mismo origen + APP_BASE. */
 const trimBase = () => import.meta.env.VITE_BACKEND_URL?.trim()?.replace(/\/$/, '') || '';
 
 function joinApi(path) {
-  const b = trimBase();
   const p = path.startsWith('/') ? path : `/${path}`;
-  return b ? `${b}${p}` : p;
+  const remote = trimBase();
+  if (remote) return `${remote}${p}`;
+  return `${APP_BASE}${p}`;
 }
 
 export function readBackendAuthFromStorage() {

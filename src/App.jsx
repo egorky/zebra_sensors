@@ -36,7 +36,7 @@ function applyFaviconFromConfig() {
     link.href = faviconDataUrl;
     link.removeAttribute('type');
   } else {
-    link.href = '/vite.svg';
+    link.href = '/manager/vite.svg';
     link.type = 'image/svg+xml';
   }
 }
@@ -50,7 +50,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/manager">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedLayout />}>

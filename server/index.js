@@ -43,6 +43,21 @@ if (trustProxy === '1' || trustProxy.toLowerCase() === 'true') {
 }
 app.use(express.json({ limit: '2mb' }));
 
+/** Prefijo público (/manager). En local sin nginx, Vite pide /manager/...; detrás de nginx que ya recorta el prefijo, no cambia nada. */
+const PUBLIC_BASE = String(process.env.APP_BASE_PATH || '/manager')
+  .trim()
+  .replace(/\/$/, '');
+if (PUBLIC_BASE) {
+  app.use((req, _res, next) => {
+    const url = req.url || '';
+    if (url === PUBLIC_BASE || url.startsWith(`${PUBLIC_BASE}/`)) {
+      const rest = url.slice(PUBLIC_BASE.length) || '/';
+      req.url = rest.startsWith('/') ? rest : `/${rest}`;
+    }
+    next();
+  });
+}
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'zebra-sensor-manager-api' });
 });
